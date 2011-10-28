@@ -1,5 +1,5 @@
 /*
- * Copyright (c) <year>, <copyright holder>
+ * Copyright (c) 2011, Åpen sone for eksperimentell informatikk
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
