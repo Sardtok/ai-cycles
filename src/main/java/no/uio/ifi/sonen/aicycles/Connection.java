@@ -37,14 +37,14 @@ import java.util.Scanner;
  * @author Sigmund Hansen <sigmunha@ifi.uio.no>
  */
 public class Connection {
-    
+
     /** The connection's socket. */
     Socket sock;
     /** The socket's input stream as a scanner. */
     Scanner in;
     /** The socket's output stream as a print stream. */
     PrintStream out;
-    
+
     /**
      * Creates a connection from a socket.
      * 
@@ -56,27 +56,37 @@ public class Connection {
         in = new Scanner(sock.getInputStream());
         out = new PrintStream(sock.getOutputStream());
     }
-    
+
     /**
      * Waits for data and creates a packet object from it.
      * 
      * @return The packet that was read.
      */
-    public Packet receivePacket() {
-        int packetType = in.nextInt();
-        
-        switch (packetType) {
-            case Packet.MOV_PKT:
-                return new Packet.MovePacket(in.nextLine());
-            case Packet.DIR_PKT:
-                return new Packet.DirectionPacket(in.nextLine());
-            case Packet.DIE_PKT:
-                return new Packet.DiePacket(in.nextLine());
+    public Packet receivePacket() throws IOException, MalformedPacketException {
+        try {
+            int packetType = in.nextInt();
+
+            switch (packetType) {
+                case Packet.MOV_PKT:
+                    return new Packet.MovePacket(in.nextLine());
+                case Packet.DIR_PKT:
+                    return new Packet.DirectionPacket(in.nextLine());
+                case Packet.DIE_PKT:
+                    return new Packet.DiePacket(in.nextLine());
+            }
+            
+        } catch (Exception e) {
+            IOException ioe = in.ioException();
+            if (ioe != null) {
+                throw ioe;
+            }
+
+            throw new MalformedPacketException(e);
         }
-        
+
         return null;
     }
-    
+
     /**
      * Sends a packet on this connection.
      * 
