@@ -28,13 +28,13 @@ package no.uio.ifi.sonen.aicycles;
 
 import java.net.Socket;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.IOException;
 
 /**
  * A connection between a client and server.
  *
- * @author Sigmund Hansen <sigmund@chickensoft.com>
+ * @author Sigmund Hansen <sigmunha@ifi.uio.no>
  */
 public class Connection {
     
@@ -42,8 +42,8 @@ public class Connection {
     Socket sock;
     /** The socket's input stream. */
     InputStream in;
-    /** The socket's output stream. */
-    OutputStream out;
+    /** The socket's output stream as a print stream. */
+    PrintStream out;
     
     /**
      * Creates a connection from a socket.
@@ -54,6 +54,25 @@ public class Connection {
     public Connection(Socket sock) throws IOException {
         this.sock = sock;
         in = sock.getInputStream();
-        out = sock.getOutputStream();
+        out = new PrintStream(sock.getOutputStream());
+    }
+    
+    /**
+     * Waits for data and creates a packet object from it.
+     * 
+     * @return The packet that was read.
+     */
+    public Packet receivePacket() {
+        return null;
+    }
+    
+    /**
+     * Sends a packet on this connection.
+     * 
+     * @param p The packet to send.
+     */
+    public void sendPacket(Packet p) {
+        out.printf("%d %s%n", p.getPacketType(), p.getData());
+        out.flush();
     }
 }
