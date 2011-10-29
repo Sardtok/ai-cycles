@@ -32,11 +32,28 @@ import java.io.OutputStream;
 import java.io.IOException;
 
 /**
+ * A connection between a client and server.
  *
  * @author Sigmund Hansen <sigmund@chickensoft.com>
  */
 public class Connection {
+    
+    /** The connection's socket. */
     Socket sock;
+    /** The socket's input stream. */
     InputStream in;
+    /** The socket's output stream. */
     OutputStream out;
+    
+    /**
+     * Creates a connection from a socket.
+     * 
+     * @param sock The socket to create a connection from.
+     * @throws IOException If either of the socket's streams could not be opened.
+     */
+    public Connection(Socket sock) throws IOException {
+        this.sock = sock;
+        in = sock.getInputStream();
+        out = sock.getOutputStream();
+    }
 }
