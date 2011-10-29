@@ -27,9 +27,9 @@
 package no.uio.ifi.sonen.aicycles;
 
 import java.net.Socket;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.IOException;
+import java.util.Scanner;
 
 /**
  * A connection between a client and server.
@@ -40,8 +40,8 @@ public class Connection {
     
     /** The connection's socket. */
     Socket sock;
-    /** The socket's input stream. */
-    InputStream in;
+    /** The socket's input stream as a scanner. */
+    Scanner in;
     /** The socket's output stream as a print stream. */
     PrintStream out;
     
@@ -53,7 +53,7 @@ public class Connection {
      */
     public Connection(Socket sock) throws IOException {
         this.sock = sock;
-        in = sock.getInputStream();
+        in = new Scanner(sock.getInputStream());
         out = new PrintStream(sock.getOutputStream());
     }
     
@@ -63,6 +63,17 @@ public class Connection {
      * @return The packet that was read.
      */
     public Packet receivePacket() {
+        int packetType = in.nextInt();
+        
+        switch (packetType) {
+            case Packet.MOV_PKT:
+                return new Packet.MovePacket(in.nextLine());
+            case Packet.DIR_PKT:
+                return new Packet.DirectionPacket(in.nextLine());
+            case Packet.DIE_PKT:
+                return new Packet.DiePacket(in.nextLine());
+        }
+        
         return null;
     }
     

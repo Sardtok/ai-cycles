@@ -65,7 +65,7 @@ public abstract class Packet {
     /**
      * A packet describing player moves in the game.
      */
-    public class MovePacket extends Packet {
+    public static class MovePacket extends Packet {
         
         /** The ID of the player that moved. */
         private int player;
@@ -106,7 +106,7 @@ public abstract class Packet {
     /**
      * A packet describing direction changes for players.
      */
-    public class DirectionPacket extends Packet {
+    public static class DirectionPacket extends Packet {
         
         /** The new direction. */
         private Direction dir;
@@ -152,7 +152,7 @@ public abstract class Packet {
     /**
      * A packet describing a player death.
      */
-    public class DiePacket extends Packet {
+    public static class DiePacket extends Packet {
         
         /** The ID of the player that died. */
         private int player;
