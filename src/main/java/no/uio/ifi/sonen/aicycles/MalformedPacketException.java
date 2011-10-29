@@ -27,10 +27,17 @@
 package no.uio.ifi.sonen.aicycles;
 
 /**
+ * Exception for packets with malformed data.
  *
  * @author Sigmund Hansen <sigmunha@ifi.uio.no>
  */
 public class MalformedPacketException extends Exception {
+    
+    /**
+     * Creates a malformed packet exception with the given cause.
+     * 
+     * @param cause The exception that was caught interpreting the malformed packet.
+     */
     public MalformedPacketException(Throwable cause) {
         super(String.format("Malformed packet: %s", cause.getMessage()), cause);
     }
