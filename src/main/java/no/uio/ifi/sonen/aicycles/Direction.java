@@ -29,7 +29,7 @@ package no.uio.ifi.sonen.aicycles;
 /**
  * Directions in which players can move in the game.
  *
- * @author Sigmund Hansen <sigmund@chickensoft.com>
+ * @author Sigmund Hansen <sigmunha@ifi.uio.no>
  */
 public enum Direction {
     
