@@ -57,7 +57,19 @@ public class Match implements Runnable {
     public void run() {
         connectPlayers();
         simulate();
+        for (Player p : players) {
+            try {
+                p.sendPacket(new Packet.SimplePacket("End of line!",
+                                                     Packet.BYE_PKT));
+                p.disconnect();
+            } catch (IOException ioe) {
+                System.err.printf("Error disconnecting %s:%n%s%n",
+                                  p.getName(), ioe.getMessage());
+            }
+        }
     }
+
+    
 
     private void connectPlayers() {
         int connectedPlayers = 0;
@@ -82,19 +94,19 @@ public class Match implements Runnable {
             } catch (MalformedPacketException mpe) {
                 System.err.println("Connecting player sent malformed packet:");
                 System.err.println(mpe.getMessage());
-                
+
                 if (c != null && !c.isDown()) {
                     c.close();
                 }
-                
+
             } catch (IOException ioe) {
                 System.err.printf("Error connecting player: %n%s%n",
                                   ioe.getMessage());
-                
+
                 if (c != null && !c.isDown()) {
                     c.close();
                 }
-                
+
                 if (ss.isClosed()) {
                     System.exit(2);
                 }
@@ -113,17 +125,17 @@ public class Match implements Runnable {
      *                                  doesn't match any of the protocol packets.
      */
     private boolean connectPlayer(Connection con) throws IOException, MalformedPacketException {
-        
-        con.sendPacket(new Packet.HandshakePacket("You're in trouble now, program! Who's your user?"));
-        Packet pkt = con.receivePacket();
-        
-        if (pkt instanceof Packet.HandshakePacket) {
-            Packet.HandshakePacket np = (Packet.HandshakePacket) pkt;
 
+        con.sendPacket(new Packet.SimplePacket("You're in trouble now, program! Who's your user?",
+                                               Packet.SHK_PKT));
+        Packet pkt = con.receivePacket();
+
+        if (pkt.getPacketType() == Packet.SHK_PKT) {
             try {
                 for (Player p : players) {
-                    if (p.getName().equals(np.getData())) {
+                    if (p.getName().equals(pkt.getData())) {
                         p.setConnection(con);
+                        System.out.printf("%s connected.%n", p.getName());
                         return true;
                     }
                 }
@@ -132,7 +144,7 @@ public class Match implements Runnable {
                 System.err.println(ise.getMessage());
             }
         }
-        
+
         con.close();
         return false;
     }
