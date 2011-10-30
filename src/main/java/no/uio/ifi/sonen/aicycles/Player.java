@@ -27,7 +27,7 @@
 package no.uio.ifi.sonen.aicycles;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReference; // Could be used for the direction
 
 /**
  *
@@ -100,6 +100,26 @@ public class Player implements Runnable {
         return dir;
     }
 
+    /**
+     * Moves the bike one square based on its direction.
+     */
+    public void update() {
+        switch (dir) {
+            case N:
+                y--;
+                break;
+            case E:
+                x++;
+                break;
+            case S:
+                y++;
+                break;
+            case W:
+                x--;
+                break;
+        }
+    }
+    
     /**
      * Reads network packets from a client.
      */
