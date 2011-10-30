@@ -96,4 +96,40 @@ public class Connection {
         out.printf("%d %s%n", p.getPacketType(), p.getData());
         out.flush();
     }
+    /**
+     * Checks if the socket has been closed, is disconnected
+     * or if either of its streams are closed.
+     * If the socket isn't connected, or one of the streams have been closed,
+     * the socket is closed.
+     * 
+     * @return true if the socket is closed, disconnected
+     *         or a one-way connection.
+     */
+    public boolean isDown() {
+        if (sock.isClosed()) {
+            return true;
+            
+        } else if (sock.isConnected()) {
+            try {
+                sock.close();
+            } catch (IOException ioe) {
+                System.err.println("Problem closing unconnected socket.");
+                System.err.println(ioe.getMessage());
+            }
+            
+            return true;
+            
+        } else if (sock.isInputShutdown() || sock.isOutputShutdown()) {
+            try {
+                sock.close();
+            } catch (IOException ioe) {
+                System.err.println("Problem closing one-way socket.");
+                System.err.println(ioe.getMessage());
+            }
+            
+            return true;
+        }
+        
+        return false;
+    }
 }
