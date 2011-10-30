@@ -39,7 +39,7 @@ public class Player implements Runnable {
     /** The name of the player. */
     private String name;
     /** The direction the player is travelling. */
-    private volatile Direction dir;
+    private volatile Direction dir = Direction.N;
     /** The horizontal position of the player. */
     private int x;
     /** The vertical position of the player. */
@@ -48,16 +48,22 @@ public class Player implements Runnable {
     private boolean alive = true;
     /** The network connection of the player. */
     private Connection con;
+    /** Whether the connection was closed cleanly. */
+    private boolean cleanDisconnect;
 
     /**
      * Creates a player with the given ID and name.
      * 
      * @param id The id of the player.
      * @param name The name of the player.
+     * @param x The horizontal start position.
+     * @param y The vertical start position.
      */
-    public Player(int id, String name) {
+    public Player(int id, String name, int x, int y) {
         this.id = id;
         this.name = name;
+        this.x = x;
+        this.y = y;
     }
 
     /**
@@ -102,8 +108,12 @@ public class Player implements Runnable {
 
     /**
      * Moves the bike one square based on its direction.
+     * 
+     * @return The direction the player moved.
      */
-    public void update() {
+    public Direction update() {
+        Direction dir = this.dir;
+        
         switch (dir) {
             case N:
                 y--;
@@ -118,6 +128,8 @@ public class Player implements Runnable {
                 x--;
                 break;
         }
+        
+        return dir;
     }
 
     /**
@@ -135,6 +147,10 @@ public class Player implements Runnable {
      * @see Connection#sendPacket(no.uio.ifi.sonen.aicycles.Packet) 
      */
     public void sendPacket(Packet p) throws IOException {
+        if (con.isDown()) {
+            return;
+        }
+        
         con.sendPacket(p);
     }
     
@@ -144,6 +160,7 @@ public class Player implements Runnable {
      * @see Connection#close() 
      */
     public void disconnect() {
+        cleanDisconnect = true;
         con.close();
     }
     
@@ -173,13 +190,44 @@ public class Player implements Runnable {
                 System.err.println(mpe.getMessage());
 
             } catch (IOException ioe) {
+                if (cleanDisconnect) {
+                    return;
+                }
+                
                 System.err.printf("IO problems with #%s's connection.%n", name);
                 System.err.println(ioe.getMessage());
-
+                
                 if (con.isDown()) {
-                    break;
+                    return;
                 }
             }
         }
+    }
+
+    /**
+     * Gets the horizontal position of the player.
+     * 
+     * @return The horizontal position.
+     */
+    int getX() {
+        return x;
+    }
+
+    /**
+     * Gets the vertical position of the player.
+     * 
+     * @return The vertical position.
+     */
+    int getY() {
+        return y;
+    }
+
+    /**
+     * Gets whether the player is alive.
+     * 
+     * @return true if the player has not been de-rezzed.
+     */
+    boolean isAlive() {
+        return alive;
     }
 }
