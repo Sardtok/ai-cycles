@@ -94,6 +94,9 @@ public abstract class Packet {
             Scanner s = new Scanner(data);
             this.player = s.nextInt();
             this.dir = Direction.valueOf(s.next());
+            if (this.dir == null) {
+                throw new IllegalArgumentException(String.format("Not a direction: %s", data));
+            }
         }
 
         /** {@inheritDoc} */
