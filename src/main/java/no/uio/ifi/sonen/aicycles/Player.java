@@ -26,32 +26,108 @@
  */
 package no.uio.ifi.sonen.aicycles;
 
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  *
  * @author Sigmund Hansen <sigmunha@ifi.uio.no>
  */
-public class Player {
+public class Player implements Runnable {
 
+    /** The ID of the player in this game. */
     private int id;
+    /** The name of the player. */
     private String name;
+    /** The direction the player is travelling. */
     private Direction dir;
+    /** The horizontal position of the player. */
+    private int x;
+    /** The vertical position of the player. */
+    private int y;
     
+    /** The network connection of the player. */
     private Connection con;
     
+    /**
+     * Creates a player with the given ID and name.
+     * 
+     * @param id The id of the player.
+     * @param name The name of the player.
+     */
     public Player(int id, String name) {
         this.id = id;
         this.name = name;
     }
     
+    /**
+     * Sets a player's connection.
+     * 
+     * @param con The connection to the player client.
+     */
     public void setConnection(Connection con) {
+        if (this.con != null) {
+            throw new IllegalStateException("Already connected!");
+        }
+        
         this.con = con;
     }
     
+    /**
+     * Gets the player's ID.
+     * 
+     * @return The player's ID.
+     */
     public int getId() {
         return id;
     }
     
+    /**
+     * Gets the player's name.
+     * 
+     * @return The player's name.
+     */
     public String getName() {
         return name;
+    }
+    
+    /**
+     * Gets the direction the player is travelling.
+     * 
+     * @return The direction the player is travelling.
+     */
+    public Direction getDir() {
+        return dir;
+    }
+
+    /**
+     * Reads network packets from a client.
+     */
+    public void run() {
+        if (con == null) {
+            throw new IllegalStateException("Player is not connected");
+        }
+        
+        while (true) {
+            try {
+                Packet p = con.receivePacket();
+                if (p instanceof Packet.DirectionPacket) {
+                    Packet.DirectionPacket dp = (Packet.DirectionPacket) p;
+                    dir = dp.getDirection();
+                }
+                
+            } catch (MalformedPacketException mpe) {
+                System.err.printf("Malformed packet from %s%n", name);
+                System.err.println(mpe.getMessage());
+                
+            } catch (IOException ioe) {
+                System.err.printf("IO problems with #%s's connection.%n", name);
+                System.err.println(ioe.getMessage());
+                
+                if (con.isDown()) {
+                    break;
+                }
+            }
+        }
     }
 }
