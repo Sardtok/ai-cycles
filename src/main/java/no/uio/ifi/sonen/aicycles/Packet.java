@@ -38,6 +38,10 @@ public abstract class Packet {
     /** The string representation of the packet contents. */
     protected String data;
     
+    // 1XX - connection and match data
+    /** Handshake packet. */
+    public static final int SHK_PKT = 100;
+    
     // 4XX - game state changes
     /** A player moves one square. */
     public static final int MOV_PKT = 400;
@@ -61,6 +65,30 @@ public abstract class Packet {
      * @return The packet's type number.
      */
     public abstract int getPacketType();
+    
+    /**
+     * A "handshake" packet.
+     * It is used for logging in a bot,
+     * and not so much to identify the protocol.
+     */
+    public static class HandshakePacket extends Packet {
+
+        /**
+         * Creates a handshake packet with the given data.
+         * 
+         * @param data The string of data to send or receive.
+         */
+        public HandshakePacket(String data) {
+            this.data = data;
+        }
+        
+        /** {@inheritDoc} */
+        @Override
+        public int getPacketType() {
+            return SHK_PKT;
+        }
+        
+    }
     
     /**
      * A packet describing player moves in the game.
