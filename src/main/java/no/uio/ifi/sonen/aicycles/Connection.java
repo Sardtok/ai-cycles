@@ -60,24 +60,33 @@ public class Connection {
     /**
      * Waits for data and creates a packet object from it.
      * 
-     * @return The packet that was read.
+     * @return The packet that was read,
+     *         or null if no packet was received within the wait time.
+     * @throws IOException if the underlying stream throws an IOException.
+     * @throws MalformedPacketException if the packet was malformed.
      */
     public Packet receivePacket() throws IOException, MalformedPacketException {
+        // hasNext blocks as long as the connection isn't closed.
+        if (!in.hasNext()) {
+            throw new IOException("End of socket's stream.");
+        }
+        
         try {
             int packetType = in.nextInt();
+            String data = in.nextLine().trim();
 
             switch (packetType) {
                 case Packet.SHK_PKT:
-                    return new Packet.SimplePacket(in.nextLine(), Packet.SHK_PKT);
+                    return new Packet.SimplePacket(data, Packet.SHK_PKT);
                     
                 case Packet.MOV_PKT:
-                    return new Packet.MovePacket(in.nextLine());
+                    return new Packet.MovePacket(data);
                     
                 case Packet.DIR_PKT:
-                    return new Packet.DirectionPacket(in.nextLine());
+                    return new Packet.DirectionPacket(data);
                     
                 case Packet.DIE_PKT:
-                    return new Packet.DiePacket(in.nextLine());
+                    return new Packet.DiePacket(data);
             }
             
         } catch (Exception e) {
