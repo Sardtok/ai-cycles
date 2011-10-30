@@ -26,16 +26,19 @@
  */
 package no.uio.ifi.sonen.aicycles;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+
 /**
  * A single light cycle match with players and game state used by a simulation.
  *
  * @author Sigmund Hansen <sigmunha@ifi.uio.no>
  */
 public class Match implements Runnable {
-    
+
     int[][] map;
     Player[] players;
-    
+
     /**
      * Creates a match with a map of the given size and the given players.
      * 
@@ -55,12 +58,73 @@ public class Match implements Runnable {
         connectPlayers();
         simulate();
     }
-    
+
     private void connectPlayers() {
-        
+        int connectedPlayers = 0;
+        ServerSocket ss = null;
+
+        try {
+            ss = new ServerSocket(1982);
+        } catch (IOException e) {
+            System.err.printf("Could not create server socket: %n%s%n",
+                              e.getMessage());
+            System.exit(1);
+        }
+
+        while (connectedPlayers < players.length) {
+            Connection c = null;
+            try {
+                c = new Connection(ss.accept());
+                c.sendPacket(new Packet.HandshakePacket("You're in trouble now, program! Who's your user?"));
+                Packet p = c.receivePacket();
+
+                if (p instanceof Packet.HandshakePacket) {
+                    connectedPlayers = connectPlayer(c,
+                                                     (Packet.HandshakePacket) p,
+                                                     connectedPlayers);
+                }
+
+            } catch (MalformedPacketException mpe) {
+                System.err.println("Connecting player sent malformed packet:");
+                System.err.println(mpe.getMessage());
+                
+                if (c != null && !c.isDown()) {
+                    c.close();
+                }
+                
+            } catch (IOException ioe) {
+                System.err.printf("Error connecting player: %n%s%n",
+                                  ioe.getMessage());
+                
+                if (c != null && !c.isDown()) {
+                    c.close();
+                }
+                
+                if (ss.isClosed()) {
+                    System.exit(2);
+                }
+            }
+        }
     }
-    
-    private void simulate() {
+
+    private int connectPlayer(Connection con, Packet.HandshakePacket np,
+                              int connectedPlayers) {
+        try {
+            for (Player p : players) {
+                if (p.getName().equals(np.getData())) {
+                    p.setConnection(con);
+                    connectedPlayers++;
+                    break;
+                }
+            }
+            
+        } catch (IllegalStateException ise) {
+            System.err.println(ise.getMessage());
+        }
         
+        return connectedPlayers;
+    }
+
+    private void simulate() {
     }
 }
