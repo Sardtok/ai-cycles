@@ -44,10 +44,11 @@ public class Player implements Runnable {
     private int x;
     /** The vertical position of the player. */
     private int y;
-    
+    /** Whether the player is alive or not. */
+    private boolean alive = true;
     /** The network connection of the player. */
     private Connection con;
-    
+
     /**
      * Creates a player with the given ID and name.
      * 
@@ -58,7 +59,7 @@ public class Player implements Runnable {
         this.id = id;
         this.name = name;
     }
-    
+
     /**
      * Sets a player's connection.
      * 
@@ -68,10 +69,10 @@ public class Player implements Runnable {
         if (this.con != null) {
             throw new IllegalStateException("Already connected!");
         }
-        
+
         this.con = con;
     }
-    
+
     /**
      * Gets the player's ID.
      * 
@@ -80,7 +81,7 @@ public class Player implements Runnable {
     public int getId() {
         return id;
     }
-    
+
     /**
      * Gets the player's name.
      * 
@@ -89,7 +90,7 @@ public class Player implements Runnable {
     public String getName() {
         return name;
     }
-    
+
     /**
      * Gets the direction the player is travelling.
      * 
@@ -118,6 +119,33 @@ public class Player implements Runnable {
                 break;
         }
     }
+
+    /**
+     * De-rezzes (kills) the player.
+     */
+    public void derez() {
+        alive = false;
+    }
+
+    /**
+     * Sends a packet on the player's connection.
+     * 
+     * @param p The packet to send.
+     * @throws IOException if the connection throws an IOException.
+     * @see Connection#sendPacket(no.uio.ifi.sonen.aicycles.Packet) 
+     */
+    public void sendPacket(Packet p) throws IOException {
+        con.sendPacket(p);
+    }
+    
+    /**
+     * Disconnects this player.
+     * 
+     * @see Connection#close() 
+     */
+    public void disconnect() {
+        con.close();
+    }
     
     /**
      * Reads network packets from a client.
@@ -126,23 +154,28 @@ public class Player implements Runnable {
         if (con == null) {
             throw new IllegalStateException("Player is not connected");
         }
-        
+
         while (true) {
             try {
                 Packet p = con.receivePacket();
                 if (p instanceof Packet.DirectionPacket) {
                     Packet.DirectionPacket dp = (Packet.DirectionPacket) p;
                     dir = dp.getDirection();
+                } else if (p.getPacketType() == Packet.BYE_PKT) {
+                    System.out.printf("%s disconnected: %s%n",
+                                      name, p.getData());
+                    disconnect();
+                    break;
                 }
-                
+
             } catch (MalformedPacketException mpe) {
                 System.err.printf("Malformed packet from %s%n", name);
                 System.err.println(mpe.getMessage());
-                
+
             } catch (IOException ioe) {
                 System.err.printf("IO problems with #%s's connection.%n", name);
                 System.err.println(ioe.getMessage());
-                
+
                 if (con.isDown()) {
                     break;
                 }
