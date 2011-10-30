@@ -38,6 +38,8 @@ public class Match implements Runnable {
 
     int[][] map;
     Player[] players;
+    
+    private static final long TIMESTEP = 100;
 
     /**
      * Creates a match with a map of the given size and the given players.
@@ -48,15 +50,25 @@ public class Match implements Runnable {
      */
     public Match(int width, int height, String[] players) {
         map = new int[width][height];
+        int x = width / (players.length / 2 + 1);
+        int y = height / 3;
         this.players = new Player[players.length];
         for (int i = 0; i < players.length; i++) {
-            this.players[i] = new Player(i + 1, players[i]);
+            this.players[i] = new Player(i + 1, players[i],
+                                         x * (i % (players.length / 2) + 1),
+                                         y * (i / 2 + 1));
         }
     }
 
     public void run() {
         connectPlayers();
+        
+        for (Player p : players) {
+            new Thread(p).start();
+        }
+        
         simulate();
+        
         for (Player p : players) {
             try {
                 p.sendPacket(new Packet.SimplePacket("End of line!",
@@ -68,8 +80,6 @@ public class Match implements Runnable {
             }
         }
     }
-
-    
 
     private void connectPlayers() {
         int connectedPlayers = 0;
@@ -145,10 +155,86 @@ public class Match implements Runnable {
             }
         }
 
+        System.out.println("Unidentified program on the game grid!");
         con.close();
         return false;
     }
 
+    private void kill(Player p) {
+        System.out.printf("%s died!%n", p.getName());
+        p.derez();
+        Packet diePacket = new Packet.DiePacket(p.getId());
+        for (Player player : players) {
+            try {
+                player.sendPacket(diePacket);
+            } catch (IOException ioe) {
+                System.err.printf("Connection problems for %s:%n%s%n",
+                                  player.getName(), ioe.getMessage());
+                player.disconnect();
+            }
+        }
+    }
+    
+    private void move(Player p) {
+        Direction d = p.update();
+        
+        Packet movePacket = new Packet.MovePacket(p.getId(), d);
+        for (Player player : players) {
+            try {
+                player.sendPacket(movePacket);
+            } catch (IOException ioe) {
+                System.err.printf("Connection problems for %s:%n%s%n",
+                                  player.getName(), ioe.getMessage());
+                player.disconnect();
+            }
+        }
+    }
+    
     private void simulate() {
+        int liveCount = players.length;
+        long lastUpdate = System.nanoTime();
+        
+        while (liveCount > 1) {
+            if ((System.nanoTime() - lastUpdate) / 1000000 < TIMESTEP) {
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                } finally {
+                    continue;
+                }
+            }
+            
+            for (Player p : players) {
+                if (!p.isAlive()) {
+                    continue;
+                }
+                
+                move(p);
+                int x = p.getX();
+                int y = p.getY();
+                
+                if (x >= 0 && x < map.length
+                        && y >= 0 && y <= map[x].length
+                        && map[x][y] == 0) {
+                    map[x][y] = p.getId();
+
+                } else {
+                    for (Player p2 : players) {
+                        if (p2 == p || !p.isAlive()) {
+                            continue;
+                        }
+                        
+                        if (p2.getX() == x && p2.getY() == y) {
+                            kill(p2);
+                            liveCount--;
+                        }
+                    }
+                    kill(p);
+                    liveCount--;
+                }
+            }
+            
+            lastUpdate = System.nanoTime();
+        }
     }
 }
