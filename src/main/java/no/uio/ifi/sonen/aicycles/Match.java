@@ -50,13 +50,15 @@ public class Match implements Runnable {
      */
     public Match(int width, int height, String[] players) {
         map = new int[width][height];
-        int x = width / (players.length / 2 + 1);
-        int y = height / 3;
+        int dX = width / (players.length / 2 + 1);
+        int dY = height / 3;
         this.players = new Player[players.length];
+        
         for (int i = 0; i < players.length; i++) {
-            this.players[i] = new Player(i + 1, players[i],
-                                         x * (i % (players.length / 2) + 1),
-                                         y * (i / 2 + 1));
+            int x = dX * (i % (players.length / 2) + 1);
+            int y = dY * (i / 2 + 1);
+            this.players[i] = new Player(i + 1, players[i], x, y);
+            map[x][y] = i + 1;
         }
     }
 
