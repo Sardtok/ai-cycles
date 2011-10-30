@@ -68,7 +68,7 @@ public class Connection {
 
             switch (packetType) {
                 case Packet.SHK_PKT:
-                    return new Packet.HandshakePacket(in.nextLine());
+                    return new Packet.SimplePacket(in.nextLine(), Packet.SHK_PKT);
                     
                 case Packet.MOV_PKT:
                     return new Packet.MovePacket(in.nextLine());
@@ -96,16 +96,23 @@ public class Connection {
      * Sends a packet on this connection.
      * 
      * @param p The packet to send.
+     * @throws IOException if the underlying output stream throws an IOException.
      */
-    public void sendPacket(Packet p) {
+    public void sendPacket(Packet p) throws IOException {
         out.printf("%d %s%n", p.getPacketType(), p.getData());
-        out.flush();
+        if (out.checkError()) {
+            throw new IOException("Error sending packet.");
+        }
     }
     
     /**
      * Closes this connection's socket.
      */
     public void close() {
+        if (sock.isClosed()) {
+            return;
+        }
+        
         try {
             sock.close();
         } catch (IOException ioe) {
