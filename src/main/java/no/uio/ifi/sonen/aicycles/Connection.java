@@ -143,7 +143,7 @@ public class Connection {
         if (sock.isClosed()) {
             return true;
             
-        } else if (sock.isConnected()) {
+        } else if (!sock.isConnected()) {
             try {
                 sock.close();
             } catch (IOException ioe) {
