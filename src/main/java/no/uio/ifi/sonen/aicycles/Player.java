@@ -27,7 +27,6 @@
 package no.uio.ifi.sonen.aicycles;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference; // Could be used for the direction
 
 /**
  *
@@ -40,7 +39,7 @@ public class Player implements Runnable {
     /** The name of the player. */
     private String name;
     /** The direction the player is travelling. */
-    private Direction dir;
+    private volatile Direction dir;
     /** The horizontal position of the player. */
     private int x;
     /** The vertical position of the player. */
