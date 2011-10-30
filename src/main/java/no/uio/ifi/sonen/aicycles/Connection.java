@@ -67,10 +67,15 @@ public class Connection {
             int packetType = in.nextInt();
 
             switch (packetType) {
+                case Packet.SHK_PKT:
+                    return new Packet.HandshakePacket(in.nextLine());
+                    
                 case Packet.MOV_PKT:
                     return new Packet.MovePacket(in.nextLine());
+                    
                 case Packet.DIR_PKT:
                     return new Packet.DirectionPacket(in.nextLine());
+                    
                 case Packet.DIE_PKT:
                     return new Packet.DiePacket(in.nextLine());
             }
@@ -96,6 +101,19 @@ public class Connection {
         out.printf("%d %s%n", p.getPacketType(), p.getData());
         out.flush();
     }
+    
+    /**
+     * Closes this connection's socket.
+     */
+    public void close() {
+        try {
+            sock.close();
+        } catch (IOException ioe) {
+            System.err.println("Could not close connection:");
+            System.err.println(ioe.getMessage());
+        }
+    }
+    
     /**
      * Checks if the socket has been closed, is disconnected
      * or if either of its streams are closed.
