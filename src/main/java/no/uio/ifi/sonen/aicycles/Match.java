@@ -75,13 +75,8 @@ public class Match implements Runnable {
             Connection c = null;
             try {
                 c = new Connection(ss.accept());
-                c.sendPacket(new Packet.HandshakePacket("You're in trouble now, program! Who's your user?"));
-                Packet p = c.receivePacket();
-
-                if (p instanceof Packet.HandshakePacket) {
-                    connectedPlayers = connectPlayer(c,
-                                                     (Packet.HandshakePacket) p,
-                                                     connectedPlayers);
+                if (connectPlayer(c)) {
+                    connectedPlayers++;
                 }
 
             } catch (MalformedPacketException mpe) {
@@ -107,22 +102,39 @@ public class Match implements Runnable {
         }
     }
 
-    private int connectPlayer(Connection con, Packet.HandshakePacket np,
-                              int connectedPlayers) {
-        try {
-            for (Player p : players) {
-                if (p.getName().equals(np.getData())) {
-                    p.setConnection(con);
-                    connectedPlayers++;
-                    break;
+    /**
+     * Tries to match a connection with a player based on its user name.
+     * 
+     * @param con The connection a player is trying to connect on.
+     * @return true if the player was connected, false if not.
+     * @throws IOException if receiving or sending packets on the connection fail,
+     *                     or closing the connection upon problems fail.
+     * @throws MalformedPacketException if the packet received from the client
+     *                                  doesn't match any of the protocol packets.
+     */
+    private boolean connectPlayer(Connection con) throws IOException, MalformedPacketException {
+        
+        con.sendPacket(new Packet.HandshakePacket("You're in trouble now, program! Who's your user?"));
+        Packet pkt = con.receivePacket();
+        
+        if (pkt instanceof Packet.HandshakePacket) {
+            Packet.HandshakePacket np = (Packet.HandshakePacket) pkt;
+
+            try {
+                for (Player p : players) {
+                    if (p.getName().equals(np.getData())) {
+                        p.setConnection(con);
+                        return true;
+                    }
                 }
+
+            } catch (IllegalStateException ise) {
+                System.err.println(ise.getMessage());
             }
-            
-        } catch (IllegalStateException ise) {
-            System.err.println(ise.getMessage());
         }
         
-        return connectedPlayers;
+        con.close();
+        return false;
     }
 
     private void simulate() {
