@@ -28,6 +28,7 @@ package no.uio.ifi.sonen.aicycles;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * A single light cycle match with players and game state used by a simulation.
@@ -36,10 +37,12 @@ import java.net.ServerSocket;
  */
 public class Match implements Runnable {
 
-    int[][] map;
-    Player[] players;
-    
+    private int[][] map;
+    private Player[] players;
+    private boolean finished = false;
     private static final long TIMESTEP = 100;
+    private ConcurrentLinkedQueue<Packet> broadcastQueue =
+            new ConcurrentLinkedQueue<Packet>();
 
     /**
      * Creates a match with a map of the given size and the given players.
@@ -53,7 +56,7 @@ public class Match implements Runnable {
         int dX = width / (players.length / 2 + 1);
         int dY = height / 3;
         this.players = new Player[players.length];
-        
+
         for (int i = 0; i < players.length; i++) {
             int x = dX * (i % (players.length / 2) + 1);
             int y = dY * (i / 2 + 1);
@@ -64,13 +67,44 @@ public class Match implements Runnable {
 
     public void run() {
         connectPlayers();
-        
+
+        // A thread handling packets that should be broadcast to every user.
+        new Thread(new Runnable() {
+
+            /**
+             * Checks the broadcast packet queue for packets.
+             * If there are none, it sleeps for a short while and tries again.
+             */
+            public void run() {
+                while (!finished) {
+                    if (!broadcastQueue.isEmpty()) {
+                        Packet pkt = broadcastQueue.poll();
+                        for (Player p : players) {
+                            try {
+                                p.sendPacket(pkt);
+                            } catch (IOException ioe) {
+                                System.err.printf("Connection problems for %s:%n%s%n",
+                                                  p.getName(), ioe.getMessage());
+                                p.disconnect();
+                            }
+                        }
+
+                    } else {
+                        try {
+                            Thread.sleep(5);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+                }
+            }
+        }).start();
+
         for (Player p : players) {
             new Thread(p).start();
         }
-        
+
         simulate();
-        
+
         for (Player p : players) {
             try {
                 p.sendPacket(new Packet.SimplePacket("End of line!",
@@ -162,62 +196,41 @@ public class Match implements Runnable {
         return false;
     }
 
-    private void kill(Player p) {
-        System.out.printf("%s died!%n", p.getName());
+    private void kill(final Player p) {
         p.derez();
-        Packet diePacket = new Packet.DiePacket(p.getId());
-        for (Player player : players) {
-            try {
-                player.sendPacket(diePacket);
-            } catch (IOException ioe) {
-                System.err.printf("Connection problems for %s:%n%s%n",
-                                  player.getName(), ioe.getMessage());
-                player.disconnect();
-            }
-        }
+        broadcastQueue.offer(new Packet.DiePacket(p.getId()));
     }
-    
-    private void move(Player p) {
-        Direction d = p.update();
-        
-        Packet movePacket = new Packet.MovePacket(p.getId(), d);
-        for (Player player : players) {
-            try {
-                player.sendPacket(movePacket);
-            } catch (IOException ioe) {
-                System.err.printf("Connection problems for %s:%n%s%n",
-                                  player.getName(), ioe.getMessage());
-                player.disconnect();
-            }
-        }
+
+    private void move(final Player p) {
+        final Direction d = p.update();
+        broadcastQueue.offer(new Packet.MovePacket(p.getId(), d));
     }
-    
+
     private void simulate() {
         int liveCount = players.length;
         long lastUpdate = System.nanoTime();
-        
+
         while (liveCount > 1) {
             if ((System.nanoTime() - lastUpdate) / 1000000 < TIMESTEP) {
                 try {
                     Thread.sleep(5);
                 } catch (InterruptedException e) {
-                } finally {
-                    continue;
                 }
+                continue;
             }
-            
+
             for (Player p : players) {
                 if (!p.isAlive()) {
                     continue;
                 }
-                
+
                 move(p);
                 int x = p.getX();
                 int y = p.getY();
-                
+
                 if (x >= 0 && x < map.length
-                        && y >= 0 && y <= map[x].length
-                        && map[x][y] == 0) {
+                    && y >= 0 && y <= map[x].length
+                    && map[x][y] == 0) {
                     map[x][y] = p.getId();
 
                 } else {
@@ -225,7 +238,7 @@ public class Match implements Runnable {
                         if (p2 == p || !p.isAlive()) {
                             continue;
                         }
-                        
+
                         if (p2.getX() == x && p2.getY() == y) {
                             kill(p2);
                             liveCount--;
@@ -235,7 +248,7 @@ public class Match implements Runnable {
                     liveCount--;
                 }
             }
-            
+
             lastUpdate = System.nanoTime();
         }
     }
