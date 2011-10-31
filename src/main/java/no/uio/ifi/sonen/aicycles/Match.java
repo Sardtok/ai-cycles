@@ -53,15 +53,18 @@ public class Match implements Runnable {
      */
     public Match(int width, int height, String[] players) {
         map = new int[width][height];
-        int dX = width / (players.length / 2 + 1);
-        int dY = height / 3;
+        int cols = Math.max(players.length / 2 + 1, 3);
+        int dX = width / cols;
+        int dY = height / (players.length < 3 ? 2 : 3);
         this.players = new Player[players.length];
 
         for (int i = 0; i < players.length; i++) {
-            int x = dX * (i % (players.length / 2) + 1);
+            int x = dX * (i % (cols) + 1);
             int y = dY * (i / 2 + 1);
+            System.out.printf("%d / 2 + 1 = %d%n", i, ((i / 2) + 1));
             this.players[i] = new Player(i + 1, players[i], x, y);
             map[x][y] = i + 1;
+            System.out.printf("%s - %d x %d%n", players[i], x, y);
         }
     }
 
@@ -76,7 +79,7 @@ public class Match implements Runnable {
              * If there are none, it sleeps for a short while and tries again.
              */
             public void run() {
-                while (!finished) {
+                while (!broadcastQueue.isEmpty() || !finished) {
                     if (!broadcastQueue.isEmpty()) {
                         Packet pkt = broadcastQueue.poll();
                         for (Player p : players) {
@@ -96,6 +99,10 @@ public class Match implements Runnable {
                         }
                     }
                 }
+                
+                for (Player p : players) {
+                    p.disconnect();
+                }
             }
         }).start();
 
@@ -105,16 +112,8 @@ public class Match implements Runnable {
 
         simulate();
 
-        for (Player p : players) {
-            try {
-                p.sendPacket(new Packet.SimplePacket("End of line!",
-                                                     Packet.BYE_PKT));
-                p.disconnect();
-            } catch (IOException ioe) {
-                System.err.printf("Error disconnecting %s:%n%s%n",
-                                  p.getName(), ioe.getMessage());
-            }
-        }
+        broadcastQueue.add(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
+        finished = true;
     }
 
     private void connectPlayers() {
