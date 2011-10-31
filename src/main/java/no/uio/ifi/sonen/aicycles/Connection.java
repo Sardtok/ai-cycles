@@ -67,7 +67,7 @@ public class Connection {
      */
     public Packet receivePacket() throws IOException, MalformedPacketException {
         // hasNext blocks as long as the connection isn't closed.
-        if (!in.hasNext()) {
+        if (!in.hasNextInt() || isDown()) {
             throw new IOException("End of socket's stream.");
         }
         
