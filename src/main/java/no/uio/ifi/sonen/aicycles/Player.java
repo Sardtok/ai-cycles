@@ -188,6 +188,10 @@ public class Player implements Runnable {
             } catch (MalformedPacketException mpe) {
                 System.err.printf("Malformed packet from %s%n", name);
                 System.err.println(mpe.getMessage());
+                
+                if (con.isDown()) {
+                    return;
+                }
 
             } catch (IOException ioe) {
                 if (cleanDisconnect) {
