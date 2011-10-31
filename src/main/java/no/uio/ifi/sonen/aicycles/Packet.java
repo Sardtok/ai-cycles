@@ -41,10 +41,14 @@ public abstract class Packet {
     // 1XX - connection and match data
     /** Handshake packet. */
     public static final int SHK_PKT = 100;
-    /** Welcome packet. */
-    public static final int HLO_PKT = 101;
+    /** Player ID packet. */
+    public static final int PID_PKT = 101;
+    /** Map packet. */
+    public static final int MAP_PKT = 102;
+    /** Position packet. */
+    public static final int POS_PKT = 103;
     /** Disconnect packet. */
-    public static final int BYE_PKT = 102;
+    public static final int BYE_PKT = 199;
     
     // 4XX - game state changes
     /** A player moves one square. */
@@ -218,6 +222,133 @@ public abstract class Packet {
         @Override
         public int getPacketType() {
             return DIE_PKT;
+        }
+    }
+    
+    /**
+     * A packet giving a client its ID.
+     */
+    public static class IdPacket extends Packet {
+        
+        /** The ID of the player. */
+        private int player;
+        
+        /**
+         * Creates a player ID packet from a player ID.
+         * 
+         * @param player The ID of the player.
+         */
+        public IdPacket(int player) {
+            this.player = player;
+            this.data = Integer.toString(player);
+        }
+        
+        /**
+         * Creates a player ID packet from a string.
+         * 
+         * @param data A string containing the ID of a player.
+         */
+        public IdPacket(String data) {
+            this.player = Integer.parseInt(data);
+            this.data = data;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int getPacketType() {
+            return PID_PKT;
+        }
+    }
+    
+    /**
+     * A packet describing a player's position.
+     */
+    public static class PositionPacket extends Packet {
+        
+        /** The ID of the player. */
+        private int player;
+        /** The horizontal position. */
+        private int x;
+        /** The vertical position. */
+        private int y;
+        
+        /**
+         * Creates a position packet from a player ID and X and Y coordinates.
+         * 
+         * @param player The ID of the player.
+         * @param x The player's horizontal position.
+         * @param y The player's vertical position.
+         */
+        public PositionPacket(int player, int x, int y) {
+            this.player = player;
+            this.x = x;
+            this.y = y;
+            this.data = String.format("%d %d %d", player, x, y);
+        }
+        
+        /**
+         * Creates a position packet from a string.
+         * 
+         * @param data A string containing the ID of a player and its position.
+         */
+        public PositionPacket(String data) {
+            Scanner s = new Scanner(data);
+            this.player = s.nextInt();
+            this.x = s.nextInt();
+            this.y = s.nextInt();
+            this.data = data;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int getPacketType() {
+            return POS_PKT;
+        }
+    }
+    
+    /**
+     * A packet describing a map's size and number of players.
+     */
+    public static class MapPacket extends Packet {
+        
+        /** The number of players. */
+        private int players;
+        /** The width of the map. */
+        private int width;
+        /** The height of the map. */
+        private int height;
+        
+        /**
+         * Creates a map packet from the given width, height and number of players.
+         * 
+         * @param width The width of the map.
+         * @param height The height of the map.
+         * @param players The number of players.
+         */
+        public MapPacket(int width, int height, int players) {
+            this.width = width;
+            this.height = height;
+            this.players = players;
+            this.data = String.format("%d %d %d", width, height, players);
+        }
+        
+        /**
+         * Creates a map packet from a string.
+         * 
+         * @param data A string containing the width, height and number of players.
+         */
+        public MapPacket(String data) {
+            Scanner s = new Scanner(data);
+            this.width = s.nextInt();
+            this.height = s.nextInt();
+            this.players = s.nextInt();
+            this.data = data;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int getPacketType() {
+            return MAP_PKT;
         }
     }
 }
