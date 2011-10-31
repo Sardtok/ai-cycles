@@ -278,7 +278,7 @@ public class Match implements Runnable {
                 }
             }
 
-            lastUpdate = System.nanoTime();
+            lastUpdate += TIMESTEP;
         }
     }
 }
