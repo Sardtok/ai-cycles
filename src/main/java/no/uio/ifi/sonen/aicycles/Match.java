@@ -37,10 +37,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class Match implements Runnable {
 
+    /** The map. */
     private int[][] map;
+    /** The match's players*/
     private Player[] players;
+    /** Whether the simulation is over. */
     private boolean finished = false;
+    /** The number of milliseconds between updates. */
     private static final long TIMESTEP = 100;
+    /** A queue of packets to send to clients. */
     private ConcurrentLinkedQueue<Packet> broadcastQueue =
             new ConcurrentLinkedQueue<Packet>();
 
@@ -57,17 +62,22 @@ public class Match implements Runnable {
         int dX = width / cols;
         int dY = height / (players.length < 3 ? 2 : 3);
         this.players = new Player[players.length];
-
+        
+        broadcastQueue.offer(new Packet.MapPacket(width, height, players.length));
+        
         for (int i = 0; i < players.length; i++) {
             int x = dX * (i % (cols) + 1);
             int y = dY * (i / 2 + 1);
-            System.out.printf("%d / 2 + 1 = %d%n", i, ((i / 2) + 1));
             this.players[i] = new Player(i + 1, players[i], x, y);
             map[x][y] = i + 1;
-            System.out.printf("%s - %d x %d%n", players[i], x, y);
+            broadcastQueue.offer(new Packet.PositionPacket(i + 1, x, y));
         }
     }
 
+    /**
+     * Connects all players,
+     * starts the broadcast thread and runs the simulation.
+     */
     public void run() {
         connectPlayers();
 
@@ -116,6 +126,10 @@ public class Match implements Runnable {
         finished = true;
     }
 
+    /**
+     * Waits for all players to connect.
+     * After connecting the players the server socket closes.
+     */
     private void connectPlayers() {
         int connectedPlayers = 0;
         ServerSocket ss = null;
@@ -179,6 +193,7 @@ public class Match implements Runnable {
             try {
                 for (Player p : players) {
                     if (p.getName().equals(pkt.getData())) {
+                        con.sendPacket(new Packet.IdPacket(p.getId()));
                         p.setConnection(con);
                         System.out.printf("%s connected.%n", p.getName());
                         return true;
@@ -195,16 +210,31 @@ public class Match implements Runnable {
         return false;
     }
 
-    private void kill(final Player p) {
+    /**
+     * Kills a player and adds a die packet to the broadcast queue.
+     * 
+     * @param p The player to kill.
+     */
+    private void kill(Player p) {
         p.derez();
         broadcastQueue.offer(new Packet.DiePacket(p.getId()));
     }
 
-    private void move(final Player p) {
+    /**
+     * Moves a player and adds a move packet to the broadcast queue.
+     * 
+     * @param p The player whose position to update.
+     */
+    private void move(Player p) {
         final Direction d = p.update();
         broadcastQueue.offer(new Packet.MovePacket(p.getId(), d));
     }
 
+    /**
+     * Runs the game.
+     * Every timestep the game state is updated,
+     * moving all live players and killing any colliding players.
+     */
     private void simulate() {
         int liveCount = players.length;
         long lastUpdate = System.nanoTime();
