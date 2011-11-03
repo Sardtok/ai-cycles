@@ -44,10 +44,11 @@ public class Match implements Runnable {
     /** Whether the simulation is over. */
     private boolean finished = false;
     /** The number of milliseconds between updates. */
-    private static final long TIMESTEP = 100;
+    private static final long TIMESTEP = 20;
     /** A queue of packets to send to clients. */
     private ConcurrentLinkedQueue<Packet> broadcastQueue =
             new ConcurrentLinkedQueue<Packet>();
+    private Viewer viewer;
 
     /**
      * Creates a match with a map of the given size and the given players.
@@ -56,12 +57,13 @@ public class Match implements Runnable {
      * @param height The hight of the game map.
      * @param players The names of the players to play with.
      */
-    public Match(int width, int height, String[] players) {
+    public Match(int width, int height, String[] players, Viewer viewer) {
         map = new int[width][height];
         int cols = Math.max(players.length / 2 + 1, 3);
         int dX = width / cols;
         int dY = height / (players.length < 3 ? 2 : 3);
         this.players = new Player[players.length];
+        this.viewer = viewer;
         
         broadcastQueue.offer(new Packet.MapPacket(width, height, players.length));
         
@@ -80,6 +82,7 @@ public class Match implements Runnable {
      */
     public void run() {
         connectPlayers();
+        viewer.reset(map.length, map[0].length, players);
 
         // A thread handling packets that should be broadcast to every user.
         new Thread(new Runnable() {
@@ -117,6 +120,7 @@ public class Match implements Runnable {
         }).start();
 
         for (Player p : players) {
+            viewer.draw(p.getX(), p.getY(), p.getId());
             new Thread(p).start();
         }
 
@@ -228,6 +232,7 @@ public class Match implements Runnable {
     private void move(Player p) {
         final Direction d = p.update();
         broadcastQueue.offer(new Packet.MovePacket(p.getId(), d));
+        viewer.draw(p.getX(), p.getY(), p.getId());
     }
 
     /**
@@ -237,10 +242,10 @@ public class Match implements Runnable {
      */
     private void simulate() {
         int liveCount = players.length;
-        long lastUpdate = System.nanoTime();
+        long lastUpdate = System.nanoTime() / 1000000;
 
         while (liveCount > 1) {
-            if ((System.nanoTime() - lastUpdate) / 1000000 < TIMESTEP) {
+            if ((System.nanoTime() / 1000000) - lastUpdate < TIMESTEP) {
                 try {
                     Thread.sleep(5);
                 } catch (InterruptedException e) {
@@ -258,7 +263,7 @@ public class Match implements Runnable {
                 int y = p.getY();
 
                 if (x >= 0 && x < map.length
-                    && y >= 0 && y <= map[x].length
+                    && y >= 0 && y < map[x].length
                     && map[x][y] == 0) {
                     map[x][y] = p.getId();
 
@@ -279,6 +284,7 @@ public class Match implements Runnable {
             }
 
             lastUpdate += TIMESTEP;
+            viewer.draw();
         }
     }
 }
