@@ -44,7 +44,7 @@ public class Server {
     public static void main(String[] args) {
         System.out.println("Hello, bots!");
         Viewer v = new Viewer(false);
-        Match m = new Match(240, 180, new String[] {"sigmunha", "joe"}, v);
+        Match m = new Match(90, 90, new String[] {"sigmunha", "joe"}, v);
         m.run();
         v.close();
     }

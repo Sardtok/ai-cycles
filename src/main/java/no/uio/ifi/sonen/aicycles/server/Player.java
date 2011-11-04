@@ -42,6 +42,7 @@ public class Player implements Runnable {
     private int id;
     /** The name of the player. */
     private String name;
+    
     /** The direction the player is travelling. */
     private volatile Direction dir = Direction.N;
     /** The horizontal position of the player. */
@@ -50,6 +51,7 @@ public class Player implements Runnable {
     private int y;
     /** Whether the player is alive or not. */
     private boolean alive = true;
+    
     /** The network connection of the player. */
     private Connection con;
     /** Whether the connection was closed cleanly. */

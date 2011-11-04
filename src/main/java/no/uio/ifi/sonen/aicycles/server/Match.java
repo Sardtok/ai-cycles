@@ -49,7 +49,7 @@ public class Match implements Runnable {
     /** Whether the simulation is over. */
     private boolean finished = false;
     /** The number of milliseconds between updates. */
-    private static final long TIMESTEP = 20;
+    private static final long TIMESTEP = 50;
     /** A queue of packets to send to clients. */
     private ConcurrentLinkedQueue<Packet> broadcastQueue =
             new ConcurrentLinkedQueue<Packet>();
@@ -131,7 +131,7 @@ public class Match implements Runnable {
 
         simulate();
 
-        broadcastQueue.add(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
+        broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
         finished = true;
     }
 
