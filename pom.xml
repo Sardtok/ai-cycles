@@ -32,7 +32,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>no.uio.ifi.sonen.aicycles.AICycles</mainClass>
+                            <mainClass>no.uio.ifi.sonen.aicycles.server.Server</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
