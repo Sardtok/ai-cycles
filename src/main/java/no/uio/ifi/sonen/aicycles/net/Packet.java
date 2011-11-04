@@ -137,6 +137,24 @@ public abstract class Packet {
                 throw new IllegalArgumentException(String.format("Not a direction: %s", data));
             }
         }
+        
+        /**
+         * Gets the direction set in the packet.
+         * 
+         * @return The direction represented in this packet.
+         */
+        public Direction getDirection() {
+            return dir;
+        }
+        
+        /**
+         * Gets the player who moved.
+         * 
+         * @return The player that moved.
+         */
+        public int getPlayer() {
+            return player;
+        }
 
         /** {@inheritDoc} */
         @Override
@@ -219,6 +237,15 @@ public abstract class Packet {
             this.data = data;
         }
 
+        /**
+         * Gets the player that died.
+         * 
+         * @return The ID of the player that died.
+         */
+        public int getPlayer() {
+            return player;
+        }
+        
         /** {@inheritDoc} */
         @Override
         public int getPacketType() {
@@ -252,6 +279,15 @@ public abstract class Packet {
         public IdPacket(String data) {
             this.player = Integer.parseInt(data);
             this.data = data;
+        }
+        
+        /**
+         * Gets the player's ID.
+         * 
+         * @return The player's ID.
+         */
+        public int getId() {
+            return player;
         }
 
         /** {@inheritDoc} */
@@ -300,6 +336,33 @@ public abstract class Packet {
             this.data = data;
         }
 
+        /**
+         * Gets the horizontal position.
+         * 
+         * @return The horizontal position.
+         */
+        public int getX() {
+            return x;
+        }
+        
+        /**
+         * Gets the vertical position.
+         * 
+         * @return The vertical position.
+         */
+        public int getY() {
+            return y;
+        }
+        
+        /**
+         * Gets the player whose position is contained in this packet.
+         * 
+         * @return The player placed at these coordinates.
+         */
+        public int getPlayer() {
+            return player;
+        }
+        
         /** {@inheritDoc} */
         @Override
         public int getPacketType() {
@@ -346,6 +409,33 @@ public abstract class Packet {
             this.data = data;
         }
 
+        /**
+         * Gets the width of the game area.
+         * 
+         * @return The width of the game area.
+         */
+        public int getWidth() {
+            return width;
+        }
+        
+        /**
+         * Gets the height of the game area.
+         * 
+         * @return The height of the game area.
+         */
+        public int getHeight() {
+            return height;
+        }
+        
+        /**
+         * Gets the number of players in the current game.
+         * 
+         * @return The number of players.
+         */
+        public int getPlayers() {
+            return players;
+        }
+        
         /** {@inheritDoc} */
         @Override
         public int getPacketType() {
