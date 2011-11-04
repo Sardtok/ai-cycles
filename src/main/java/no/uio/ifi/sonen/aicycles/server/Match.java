@@ -144,7 +144,7 @@ public class Match implements Runnable {
         ServerSocket ss = null;
 
         try {
-            ss = new ServerSocket(1982);
+            ss = new ServerSocket(Connection.PORT);
         } catch (IOException e) {
             System.err.printf("Could not create server socket: %n%s%n",
                               e.getMessage());
