@@ -38,12 +38,15 @@ import java.util.Scanner;
  */
 public class Connection {
 
+    /** The default port used for networking. */
+    public static final int PORT = 1982;
+    
     /** The connection's socket. */
-    Socket sock;
+    private Socket sock;
     /** The socket's input stream as a scanner. */
-    Scanner in;
+    private Scanner in;
     /** The socket's output stream as a print stream. */
-    PrintStream out;
+    private PrintStream out;
 
     /**
      * Creates a connection from a socket.
