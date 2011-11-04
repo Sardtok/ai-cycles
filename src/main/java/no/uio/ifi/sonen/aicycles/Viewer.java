@@ -26,6 +26,7 @@
  */
 package no.uio.ifi.sonen.aicycles;
 
+import no.uio.ifi.sonen.aicycles.server.Player;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.DisplayMode;

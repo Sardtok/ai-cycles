@@ -25,14 +25,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package no.uio.ifi.sonen.aicycles;
+package no.uio.ifi.sonen.aicycles.server;
+
+import no.uio.ifi.sonen.aicycles.Viewer;
 
 /**
  * AICycles simulator/server.
  * 
  * @author Sigmund Hansen <sigmunha@ifi.uio.no>
  */
-public class AICycles {
+public class Server {
 
     /**
      * Entry point.
@@ -41,5 +43,9 @@ public class AICycles {
      */
     public static void main(String[] args) {
         System.out.println("Hello, bots!");
+        Viewer v = new Viewer(false);
+        Match m = new Match(240, 180, new String[] {"sigmunha", "joe"}, v);
+        m.run();
+        v.close();
     }
 }

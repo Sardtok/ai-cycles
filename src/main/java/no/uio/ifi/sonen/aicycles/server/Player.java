@@ -24,9 +24,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package no.uio.ifi.sonen.aicycles;
+package no.uio.ifi.sonen.aicycles.server;
 
+import no.uio.ifi.sonen.aicycles.net.Connection;
+import no.uio.ifi.sonen.aicycles.net.MalformedPacketException;
+import no.uio.ifi.sonen.aicycles.net.Packet;
 import java.io.IOException;
+import no.uio.ifi.sonen.aicycles.Direction;
 
 /**
  *

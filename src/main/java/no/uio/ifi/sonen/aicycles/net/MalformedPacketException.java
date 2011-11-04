@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package no.uio.ifi.sonen.aicycles;
+package no.uio.ifi.sonen.aicycles.net;
 
 /**
  * Exception for packets with malformed data.

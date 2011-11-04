@@ -24,9 +24,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package no.uio.ifi.sonen.aicycles;
+package no.uio.ifi.sonen.aicycles.net;
 
 import java.util.Scanner;
+import no.uio.ifi.sonen.aicycles.Direction;
 
 /**
  * An abstract class for representing packets.
