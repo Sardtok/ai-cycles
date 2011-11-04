@@ -42,11 +42,11 @@ public class Cycle {
     }
     
     public int getX() {
-        return x;
+        return x + 1;
     }
     
     public int getY() {
-        return y;
+        return y + 1;
     }
     
     public Direction getDirection() {
