@@ -50,7 +50,12 @@ public class AwesomeBot extends BotBase implements Runnable {
     }
     
     public static void main(String[] args) {
-        AwesomeBot pb = new AwesomeBot("localhost");
+        AwesomeBot pb;
+        if (args.length >= 1) {
+            pb = new AwesomeBot(args[0]);
+        } else {
+            pb = new AwesomeBot("localhost");
+        }
         pb.start();
     }
     
@@ -67,10 +72,44 @@ public class AwesomeBot extends BotBase implements Runnable {
             }
 
             double chance = Math.random();
-            if (chance <= 0.3) {
+            Cycle c = cycles[id-1];
+            Direction dir = c.getDirection();
+            int x = c.getX();
+            int y = c.getY();
+            boolean forward = false, left = false, right = false;
+            switch (dir) {
+                case N:
+                    forward = map[x][y - 1];
+                    left = map[x - 1][y];
+                    right = map[x + 1][y];
+                    break;
+                case E:
+                    forward = map[x + 1][y ];
+                    left = map[x][y - 1];
+                    right = map[x][y + 1];
+                    break;
+                case W:
+                    forward = map[x - 1][y ];
+                    left = map[x][y + 1];
+                    right = map[x][y - 1];
+                    break;
+                case S:
+                    forward = map[x][y + 1];
+                    left = map[x + 1][y];
+                    right = map[x - 1][y];
+                    break;
+            }
+            
+            if (chance <= 0.3 && !left) {
                 turnLeft();
-            } else if (chance >= 0.7) {
+            } else if (chance >= 0.7 && !right) {
                 turnRight();
+            } else if (forward) {
+                if (!right) {
+                    turnRight();
+                } else {
+                    turnLeft();
+                }
             }
         }
     }
