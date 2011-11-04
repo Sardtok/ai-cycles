@@ -79,9 +79,6 @@ public class Connection {
             String data = in.nextLine().trim();
 
             switch (packetType) {
-                case Packet.SHK_PKT:
-                    return new Packet.SimplePacket(data, Packet.SHK_PKT);
-                    
                 case Packet.MOV_PKT:
                     return new Packet.MovePacket(data);
                     
@@ -90,6 +87,18 @@ public class Connection {
                     
                 case Packet.DIE_PKT:
                     return new Packet.DiePacket(data);
+                    
+                case Packet.PID_PKT:
+                    return new Packet.IdPacket(data);
+                    
+                case Packet.MAP_PKT:
+                    return new Packet.MapPacket(data);
+                    
+                case Packet.POS_PKT:
+                    return new Packet.PositionPacket(data);
+                    
+                default:
+                    return new Packet.SimplePacket(data, packetType);
             }
             
         } catch (Exception e) {
@@ -100,8 +109,6 @@ public class Connection {
 
             throw new MalformedPacketException(e);
         }
-
-        return null;
     }
 
     /**
