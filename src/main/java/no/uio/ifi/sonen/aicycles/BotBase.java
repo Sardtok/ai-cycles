@@ -76,7 +76,17 @@ public abstract class BotBase {
             this.id = ((Packet.IdPacket)p).getId();
             
             Packet.MapPacket mp = (Packet.MapPacket) con.receivePacket();
-            map = new boolean[mp.getWidth()][mp.getHeight()];
+            map = new boolean[mp.getWidth() + 2][mp.getHeight() + 2];
+            for (int i = 0; i < map.length; i++) {
+                map[i][0] = true;
+                map[i][map[i].length - 1] = true;
+            }
+            
+            for (int i = 0; i < map[0].length; i++) {
+                map[0][i] = true;
+                map[map.length - 1][i] = true;
+            }
+            
             cycles = new Cycle[mp.getPlayers()];
             for (int i = 0; i < cycles.length; i++) {
                 Packet.PositionPacket pp = (Packet.PositionPacket) con.receivePacket();
