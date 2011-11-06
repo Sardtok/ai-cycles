@@ -76,13 +76,16 @@ public class Player implements Runnable {
      * Sets a player's connection.
      * 
      * @param con The connection to the player client.
+     * @return true if the connection was set,
+     *         false if the player is already connected.
      */
-    public void setConnection(Connection con) {
+    public boolean setConnection(Connection con) {
         if (this.con != null) {
-            throw new IllegalStateException("Already connected!");
+            return false;
         }
 
         this.con = con;
+        return true;
     }
 
     /**

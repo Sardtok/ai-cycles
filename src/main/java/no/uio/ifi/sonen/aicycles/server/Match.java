@@ -72,9 +72,9 @@ public class Match implements Runnable {
         int dY = height / (players.length < 3 ? 2 : 3);
         this.players = new Player[players.length];
         this.viewer = viewer;
-        
+
         broadcastQueue.offer(new Packet.MapPacket(width, height, players.length));
-        
+
         for (int i = 0; i < players.length; i++) {
             int x = dX * (i % (cols) + 1);
             int y = dY * (i / 2 + 1);
@@ -124,7 +124,7 @@ public class Match implements Runnable {
                         }
                     }
                 }
-                
+
                 for (Player p : players) {
                     p.disconnect();
                 }
@@ -209,18 +209,13 @@ public class Match implements Runnable {
         Packet pkt = con.receivePacket();
 
         if (pkt.getPacketType() == Packet.SHK_PKT) {
-            try {
-                for (Player p : players) {
-                    if (p.getName().equals(pkt.getData())) {
-                        con.sendPacket(new Packet.IntPacket(p.getId(), Packet.PID_PKT));
-                        p.setConnection(con);
-                        System.out.printf("%s connected.%n", p.getName());
-                        return true;
-                    }
-                }
 
-            } catch (IllegalStateException ise) {
-                System.err.println(ise.getMessage());
+            for (Player p : players) {
+                if (p.getName().equals(pkt.getData()) && p.setConnection(con)) {
+                    p.sendPacket(new Packet.IntPacket(p.getId(), Packet.PID_PKT));
+                    System.out.printf("%s connected.%n", p.getName());
+                    return true;
+                }
             }
         }
 
@@ -240,7 +235,7 @@ public class Match implements Runnable {
         boolean wakeup = broadcastQueue.isEmpty();
         p.derez();
         broadcastQueue.offer(new Packet.IntPacket(p.getId(), Packet.DIE_PKT));
-        
+
         if (wakeup) {
             synchronized (broadcastQueue) {
                 broadcastQueue.notify();
@@ -260,14 +255,14 @@ public class Match implements Runnable {
         Direction d = p.update();
         broadcastQueue.offer(new Packet.MovePacket(p.getId(), d));
         viewer.draw(p.getX(), p.getY(), p.getId());
-        
+
         if (wakeup) {
             synchronized (broadcastQueue) {
                 broadcastQueue.notify();
             }
         }
     }
-    
+
     /**
      * Notifies clients that the server has finished updating the state.
      * It wakes up the broadcast thread
@@ -276,7 +271,7 @@ public class Match implements Runnable {
     private void sendUpdate() {
         boolean wakeup = broadcastQueue.isEmpty();
         broadcastQueue.offer(new Packet.IntPacket(updates, Packet.UPD_PKT));
-        
+
         if (wakeup) {
             synchronized (broadcastQueue) {
                 broadcastQueue.notify();
