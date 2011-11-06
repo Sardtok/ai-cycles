@@ -51,7 +51,7 @@ public class Match implements Runnable {
     /** The number of milliseconds between updates. */
     private static final long TIMESTEP = 50;
     /** A queue of packets to send to clients. */
-    private ConcurrentLinkedQueue<Packet> broadcastQueue =
+    private final ConcurrentLinkedQueue<Packet> broadcastQueue =
             new ConcurrentLinkedQueue<Packet>();
     private Viewer viewer;
 
@@ -94,7 +94,7 @@ public class Match implements Runnable {
 
             /**
              * Checks the broadcast packet queue for packets.
-             * If there are none, it sleeps for a short while and tries again.
+             * If there are none, it waits to be notified about new packets.
              */
             public void run() {
                 while (!broadcastQueue.isEmpty() || !finished) {
@@ -111,9 +111,13 @@ public class Match implements Runnable {
                         }
 
                     } else {
-                        try {
-                            Thread.sleep(5);
-                        } catch (InterruptedException e) {
+                        synchronized (broadcastQueue) {
+                            try {
+                                if (broadcastQueue.isEmpty()) {
+                                    broadcastQueue.wait();
+                                }
+                            } catch (InterruptedException e) {
+                            }
                         }
                     }
                 }
@@ -132,6 +136,9 @@ public class Match implements Runnable {
         simulate();
 
         broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
+        synchronized (broadcastQueue) {
+            broadcastQueue.notify();
+        }
         finished = true;
     }
 
@@ -221,23 +228,41 @@ public class Match implements Runnable {
 
     /**
      * Kills a player and adds a die packet to the broadcast queue.
+     * It wakes up the broadcast thread
+     * if the queue was empty prior to this call.
      * 
      * @param p The player to kill.
      */
     private void kill(Player p) {
+        boolean wakeup = broadcastQueue.isEmpty();
         p.derez();
         broadcastQueue.offer(new Packet.DiePacket(p.getId()));
+        
+        if (wakeup) {
+            synchronized (broadcastQueue) {
+                broadcastQueue.notify();
+            }
+        }
     }
 
     /**
      * Moves a player and adds a move packet to the broadcast queue.
+     * It wakes up the broadcast thread
+     * if the queue was empty prior to this call.
      * 
      * @param p The player whose position to update.
      */
     private void move(Player p) {
-        final Direction d = p.update();
+        boolean wakeup = broadcastQueue.isEmpty();
+        Direction d = p.update();
         broadcastQueue.offer(new Packet.MovePacket(p.getId(), d));
         viewer.draw(p.getX(), p.getY(), p.getId());
+        
+        if (wakeup) {
+            synchronized (broadcastQueue) {
+                broadcastQueue.notify();
+            }
+        }
     }
 
     /**
@@ -250,10 +275,13 @@ public class Match implements Runnable {
         long lastUpdate = System.nanoTime() / 1000000;
 
         while (liveCount > 1) {
-            if ((System.nanoTime() / 1000000) - lastUpdate < TIMESTEP) {
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
+            long delta = (System.nanoTime() / 1000000) - lastUpdate;
+            if (delta < TIMESTEP) {
+                synchronized (this) {
+                    try {
+                        this.wait(TIMESTEP - delta);
+                    } catch (InterruptedException e) {
+                    }
                 }
                 continue;
             }
