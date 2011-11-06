@@ -48,11 +48,14 @@ public class Match implements Runnable {
     private Player[] players;
     /** Whether the simulation is over. */
     private boolean finished = false;
+    /** The number of updates that have gone by. */
+    private int updates = 0;
     /** The number of milliseconds between updates. */
     private static final long TIMESTEP = 50;
     /** A queue of packets to send to clients. */
     private final ConcurrentLinkedQueue<Packet> broadcastQueue =
             new ConcurrentLinkedQueue<Packet>();
+    /** The graphical display of the game state. */
     private Viewer viewer;
 
     /**
@@ -264,6 +267,22 @@ public class Match implements Runnable {
             }
         }
     }
+    
+    /**
+     * Notifies clients that the server has finished updating the state.
+     * It wakes up the broadcast thread
+     * if the queue was empty prior to this call.
+     */
+    private void sendUpdate() {
+        boolean wakeup = broadcastQueue.isEmpty();
+        broadcastQueue.offer(new Packet.IntPacket(updates, Packet.UPD_PKT));
+        
+        if (wakeup) {
+            synchronized (broadcastQueue) {
+                broadcastQueue.notify();
+            }
+        }
+    }
 
     /**
      * Runs the game.
@@ -316,6 +335,8 @@ public class Match implements Runnable {
                 }
             }
 
+            updates++;
+            sendUpdate();
             lastUpdate += TIMESTEP;
             viewer.draw();
         }
