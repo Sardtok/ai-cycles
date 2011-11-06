@@ -209,7 +209,7 @@ public class Match implements Runnable {
             try {
                 for (Player p : players) {
                     if (p.getName().equals(pkt.getData())) {
-                        con.sendPacket(new Packet.IdPacket(p.getId()));
+                        con.sendPacket(new Packet.IntPacket(p.getId(), Packet.PID_PKT));
                         p.setConnection(con);
                         System.out.printf("%s connected.%n", p.getName());
                         return true;
@@ -236,7 +236,7 @@ public class Match implements Runnable {
     private void kill(Player p) {
         boolean wakeup = broadcastQueue.isEmpty();
         p.derez();
-        broadcastQueue.offer(new Packet.DiePacket(p.getId()));
+        broadcastQueue.offer(new Packet.IntPacket(p.getId(), Packet.DIE_PKT));
         
         if (wakeup) {
             synchronized (broadcastQueue) {
