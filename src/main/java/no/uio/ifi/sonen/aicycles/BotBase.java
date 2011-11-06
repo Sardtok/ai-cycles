@@ -50,7 +50,7 @@ public abstract class BotBase {
     /** All the players in a game. */
     protected Cycle[] cycles;
     /** The map. */
-    protected boolean[][] map;
+    protected int[][] map;
     /** Whether the bot has started running or not. */
     protected boolean running = false;
     
@@ -78,22 +78,22 @@ public abstract class BotBase {
             this.id = ((Packet.IntPacket)p).getIntValue();
             
             Packet.MapPacket mp = (Packet.MapPacket) con.receivePacket();
-            map = new boolean[mp.getWidth() + 2][mp.getHeight() + 2];
+            map = new int[mp.getWidth() + 2][mp.getHeight() + 2];
             for (int i = 0; i < map.length; i++) {
-                map[i][0] = true;
-                map[i][map[i].length - 1] = true;
+                map[i][0] = -1;
+                map[i][map[i].length - 1] = -1;
             }
             
             for (int i = 0; i < map[0].length; i++) {
-                map[0][i] = true;
-                map[map.length - 1][i] = true;
+                map[0][i] = -1;
+                map[map.length - 1][i] = -1;
             }
             
             cycles = new Cycle[mp.getPlayers()];
             for (int i = 0; i < cycles.length; i++) {
                 Packet.PositionPacket pp = (Packet.PositionPacket) con.receivePacket();
                 cycles[pp.getPlayer() - 1] = new Cycle(pp.getX(), pp.getY());
-                map[pp.getX()][pp.getY()] = true;
+                map[pp.getX()][pp.getY()] = pp.getPlayer();
             }
             
         } catch (IOException ioe) {
@@ -150,18 +150,22 @@ public abstract class BotBase {
     }
 
     /**
+     * Gets this bot's name.
      * 
-     * @return 
+     * @return this bot's name.
      */
     public abstract String getName();
     
     /**
+     * Used for a thread that updates the state this bot sees
+     * (listens to packets from the server).
      * 
+     * It will also notify the bot whenever all bots have been updated.
      */
     private class StateUpdater implements Runnable {
 
         /**
-         * 
+         * Listens for packets from the server updating the state.
          */
         public void run() {
             while (!con.isDown()) {
@@ -173,7 +177,7 @@ public abstract class BotBase {
                             Cycle c = cycles[mp.getPlayer() - 1];
                             c.setDirection(mp.getDirection());
                             c.update();
-                            map[c.getX()][c.getY()] = true;
+                            map[c.getX()][c.getY()] = mp.getPlayer();
                             break;
                             
                         case Packet.BYE_PKT:
@@ -188,8 +192,8 @@ public abstract class BotBase {
                             break;
                             
                         case Packet.UPD_PKT:
-                            updates++;
                             synchronized(BotBase.this) {
+                                updates++;
                                 BotBase.this.notify();
                             }
                             break;
