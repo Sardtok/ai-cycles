@@ -186,6 +186,13 @@ public abstract class BotBase {
                             Packet.IntPacket dp = (Packet.IntPacket) p;
                             cycles[dp.getIntValue() - 1].kill();
                             break;
+                            
+                        case Packet.UPD_PKT:
+                            updates++;
+                            synchronized(BotBase.this) {
+                                BotBase.this.notify();
+                            }
+                            break;
                     }
                     
                 } catch (IOException ioe) {
