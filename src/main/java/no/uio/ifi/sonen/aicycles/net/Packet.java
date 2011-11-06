@@ -56,6 +56,8 @@ public abstract class Packet {
     public static final int MOV_PKT = 400;
     /** Set player direction. */
     public static final int DIR_PKT = 401;
+    /** Packet which tells the client that all players have been updated. */
+    public static final int UPD_PKT = 402;
     /** A player has crashed. */
     public static final int DIE_PKT = 404;
     
@@ -99,6 +101,34 @@ public abstract class Packet {
         public int getPacketType() {
             return type;
         }
+    }
+    
+    public static class IntPacket extends Packet {
+
+        private final int intValue;
+        private final int type;
+        
+        public IntPacket(int intValue, int type) {
+            this.intValue = intValue;
+            this.type = type;
+            this.data = Integer.toString(intValue);
+        }
+        
+        public IntPacket(String data, int type) {
+            this.intValue = Integer.parseInt(data);
+            this.type = type;
+            this.data = data;
+        }
+        
+        public int getIntValue() {
+            return intValue;
+        }
+        
+        @Override
+        public int getPacketType() {
+            return type;
+        }
+        
     }
     
     /**
@@ -206,94 +236,6 @@ public abstract class Packet {
         /** {@inheritDoc} */
         public int getPacketType() {
             return DIR_PKT;
-        }
-    }
-    
-    /**
-     * A packet describing a player death.
-     */
-    public static class DiePacket extends Packet {
-        
-        /** The ID of the player that died. */
-        private int player;
-        
-        /**
-         * Creates a die packet from a player ID.
-         * 
-         * @param player The ID of the player that died.
-         */
-        public DiePacket(int player) {
-            this.player = player;
-            this.data = Integer.toString(player);
-        }
-        
-        /**
-         * Creates a die packet from a string.
-         * 
-         * @param data A string containing the ID of the player that died.
-         */
-        public DiePacket(String data) {
-            this.player = Integer.parseInt(data);
-            this.data = data;
-        }
-
-        /**
-         * Gets the player that died.
-         * 
-         * @return The ID of the player that died.
-         */
-        public int getPlayer() {
-            return player;
-        }
-        
-        /** {@inheritDoc} */
-        @Override
-        public int getPacketType() {
-            return DIE_PKT;
-        }
-    }
-    
-    /**
-     * A packet giving a client its ID.
-     */
-    public static class IdPacket extends Packet {
-        
-        /** The ID of the player. */
-        private int player;
-        
-        /**
-         * Creates a player ID packet from a player ID.
-         * 
-         * @param player The ID of the player.
-         */
-        public IdPacket(int player) {
-            this.player = player;
-            this.data = Integer.toString(player);
-        }
-        
-        /**
-         * Creates a player ID packet from a string.
-         * 
-         * @param data A string containing the ID of a player.
-         */
-        public IdPacket(String data) {
-            this.player = Integer.parseInt(data);
-            this.data = data;
-        }
-        
-        /**
-         * Gets the player's ID.
-         * 
-         * @return The player's ID.
-         */
-        public int getId() {
-            return player;
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public int getPacketType() {
-            return PID_PKT;
         }
     }
     
