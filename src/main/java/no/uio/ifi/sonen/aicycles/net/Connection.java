@@ -86,10 +86,8 @@ public class Connection {
                     return new Packet.DirectionPacket(data);
                     
                 case Packet.DIE_PKT:
-                    return new Packet.DiePacket(data);
-                    
                 case Packet.PID_PKT:
-                    return new Packet.IdPacket(data);
+                    return new Packet.IntPacket(data, packetType);
                     
                 case Packet.MAP_PKT:
                     return new Packet.MapPacket(data);
