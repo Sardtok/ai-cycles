@@ -114,7 +114,7 @@ public class Match implements Runnable {
                         synchronized (broadcastQueue) {
                             try {
                                 if (broadcastQueue.isEmpty()) {
-                                    broadcastQueue.wait();
+                                    broadcastQueue.wait(TIMESTEP);
                                 }
                             } catch (InterruptedException e) {
                             }
