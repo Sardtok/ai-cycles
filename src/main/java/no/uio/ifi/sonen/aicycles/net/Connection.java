@@ -87,6 +87,7 @@ public class Connection {
                     
                 case Packet.DIE_PKT:
                 case Packet.PID_PKT:
+                case Packet.RND_PKT:
                     return new Packet.IntPacket(data, packetType);
                     
                 case Packet.MAP_PKT:
