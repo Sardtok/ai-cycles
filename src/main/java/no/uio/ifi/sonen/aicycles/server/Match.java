@@ -125,8 +125,21 @@ public class Match implements Runnable {
                     }
                 }
 
+                // Disconnect players
                 for (Player p : players) {
-                    p.disconnect();
+                    final Player x = p;
+                    new Thread(new Runnable() {
+                        /**
+                         * Ensures a player gets disconnected
+                         * when the game is over.
+                         */
+                        public void run() {
+                            try {
+                                Thread.sleep(TIMESTEP);
+                            } catch (InterruptedException e) { }
+                            x.disconnect();
+                        }
+                    }).start();
                 }
             }
         }).start();
