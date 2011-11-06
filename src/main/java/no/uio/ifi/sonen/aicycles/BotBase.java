@@ -43,6 +43,8 @@ public abstract class BotBase {
     
     /** The connection the client is using. */
     private Connection con;
+    /** The number of updates. */
+    protected int updates = 0;
     /** This bot's ID. */
     protected int id;
     /** All the players in a game. */
@@ -73,7 +75,7 @@ public abstract class BotBase {
                 con.close();
                 System.exit(4);
             }
-            this.id = ((Packet.IdPacket)p).getId();
+            this.id = ((Packet.IntPacket)p).getIntValue();
             
             Packet.MapPacket mp = (Packet.MapPacket) con.receivePacket();
             map = new boolean[mp.getWidth() + 2][mp.getHeight() + 2];
@@ -172,11 +174,6 @@ public abstract class BotBase {
                             c.setDirection(mp.getDirection());
                             c.update();
                             map[c.getX()][c.getY()] = true;
-                            if (mp.getPlayer() == id) {
-                                synchronized(BotBase.this) {
-                                    BotBase.this.notify();
-                                }
-                            }
                             break;
                             
                         case Packet.BYE_PKT:
@@ -186,8 +183,8 @@ public abstract class BotBase {
                             break;
                             
                         case Packet.DIE_PKT:
-                            Packet.DiePacket dp = (Packet.DiePacket) p;
-                            cycles[dp.getPlayer() - 1].kill();
+                            Packet.IntPacket dp = (Packet.IntPacket) p;
+                            cycles[dp.getIntValue() - 1].kill();
                             break;
                     }
                     
