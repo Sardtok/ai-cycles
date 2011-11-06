@@ -51,7 +51,7 @@ public class Match implements Runnable {
     /** The number of updates that have gone by. */
     private int updates = 0;
     /** The number of milliseconds between updates. */
-    private static final long TIMESTEP = 50;
+    private static final long TIMESTEP = 200;
     /** A queue of packets to send to clients. */
     private final ConcurrentLinkedQueue<Packet> broadcastQueue =
             new ConcurrentLinkedQueue<Packet>();
@@ -65,7 +65,7 @@ public class Match implements Runnable {
      * @param height The hight of the game map.
      * @param players The names of the players to play with.
      */
-    public Match(int width, int height, String[] players, Viewer viewer) {
+    public Match(int width, int height, int rand, String[] players, Viewer viewer) {
         map = new int[width][height];
         int cols = Math.max(players.length / 2 + 1, 3);
         int dX = width / cols;
@@ -74,6 +74,7 @@ public class Match implements Runnable {
         this.viewer = viewer;
 
         broadcastQueue.offer(new Packet.MapPacket(width, height, players.length));
+        broadcastQueue.offer(new Packet.IntPacket(rand, Packet.RND_PKT));
 
         for (int i = 0; i < players.length; i++) {
             int x = dX * (i % (cols) + 1);
@@ -149,6 +150,9 @@ public class Match implements Runnable {
             new Thread(p).start();
         }
 
+        try {
+            Thread.sleep(TIMESTEP);
+        } catch (InterruptedException e) { }
         simulate();
 
         broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
@@ -247,6 +251,7 @@ public class Match implements Runnable {
     private void kill(Player p) {
         boolean wakeup = broadcastQueue.isEmpty();
         p.derez();
+        System.out.printf("%d died%n", p.getId());
         broadcastQueue.offer(new Packet.IntPacket(p.getId(), Packet.DIE_PKT));
 
         if (wakeup) {
