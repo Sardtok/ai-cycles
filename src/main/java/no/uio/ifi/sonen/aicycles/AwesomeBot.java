@@ -33,12 +33,21 @@ package no.uio.ifi.sonen.aicycles;
  */
 public class AwesomeBot extends BotBase implements Runnable {
 
+    /** All possible directions. */
     Direction[] dirs = Direction.values();
     
+    /**
+     * Creates an awesomely random bot.
+     * 
+     * @param server The server to connect to.
+     */
     public AwesomeBot(String server) {
         super(server);
     }
     
+    /**
+     * Starts a think thread and the BotBase's state updater.
+     */
     @Override
     public void start() {
         if (running) {
@@ -49,6 +58,12 @@ public class AwesomeBot extends BotBase implements Runnable {
         new Thread(this).start();
     }
     
+    /**
+     * Creates a bot that connects to a server and starts it.
+     * 
+     * @param args The server to connect to,
+     *             all subsequent arguments are ignored.
+     */
     public static void main(String[] args) {
         AwesomeBot pb;
         if (args.length >= 1) {
@@ -59,17 +74,27 @@ public class AwesomeBot extends BotBase implements Runnable {
         pb.start();
     }
     
+    /**
+     * If there has been any updates,
+     * it will randomly choose a new direction unless it will lead to a crash.
+     */
     public void run() {
+        int lastUpdate = updates;
         while (cycles[id - 1].isAlive()) {
-            synchronized(this) {
-                try {
-                    this.wait();
-                    if (!cycles[id - 1].isAlive()) {
-                        break;
-                    }
+            if (updates <= lastUpdate) {
+                synchronized(this) {
+                    try {
+                        // Make sure we got the lock first.
+                        if (updates <= lastUpdate) {
+                            this.wait();
+                        }
+                    } catch (InterruptedException e) { }
                     
-                } catch (InterruptedException e) { }
+                    continue;
+                }
             }
+            
+            lastUpdate = updates;
 
             double chance = Math.random();
             Cycle c = cycles[id-1];
@@ -79,24 +104,24 @@ public class AwesomeBot extends BotBase implements Runnable {
             boolean forward = false, left = false, right = false;
             switch (dir) {
                 case N:
-                    forward = map[x][y - 1];
-                    left = map[x - 1][y];
-                    right = map[x + 1][y];
+                    forward = map[x][y - 1] != 0;
+                    left = map[x - 1][y] != 0;
+                    right = map[x + 1][y] != 0;
                     break;
                 case E:
-                    forward = map[x + 1][y ];
-                    left = map[x][y - 1];
-                    right = map[x][y + 1];
+                    forward = map[x + 1][y ] != 0;
+                    left = map[x][y - 1] != 0;
+                    right = map[x][y + 1] != 0;
                     break;
                 case W:
-                    forward = map[x - 1][y ];
-                    left = map[x][y + 1];
-                    right = map[x][y - 1];
+                    forward = map[x - 1][y ] != 0;
+                    left = map[x][y + 1] != 0;
+                    right = map[x][y - 1] != 0;
                     break;
                 case S:
-                    forward = map[x][y + 1];
-                    left = map[x + 1][y];
-                    right = map[x - 1][y];
+                    forward = map[x][y + 1] != 0;
+                    left = map[x + 1][y] != 0;
+                    right = map[x - 1][y] != 0;
                     break;
             }
             
@@ -114,6 +139,9 @@ public class AwesomeBot extends BotBase implements Runnable {
         }
     }
     
+    /**
+     * {@inheritDoc }
+     */
     @Override
     public String getName() {
         return "joe";
