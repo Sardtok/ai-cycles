@@ -24,7 +24,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package no.uio.ifi.sonen.aicycles.server;
 
 import no.uio.ifi.sonen.aicycles.Viewer;
@@ -44,8 +43,9 @@ public class Server {
     public static void main(String[] args) {
         System.out.println("Hello, bots!");
         Viewer v = new Viewer(false);
-        Match m = new Match(90, 90, new String[] {"sigmunha", "joe"}, v);
+        Match m = new Match(90, 90, (int) (Math.random() * Integer.MAX_VALUE),
+                            new String[]{"joe", "joe"}, v);
         m.run();
-        v.close();
+        //v.close();
     }
 }
