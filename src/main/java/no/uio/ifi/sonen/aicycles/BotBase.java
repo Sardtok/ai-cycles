@@ -28,6 +28,7 @@ package no.uio.ifi.sonen.aicycles;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Random;
 
 import no.uio.ifi.sonen.aicycles.net.Connection;
 import no.uio.ifi.sonen.aicycles.net.MalformedPacketException;
@@ -53,6 +54,8 @@ public abstract class BotBase {
     protected int[][] map;
     /** Whether the bot has started running or not. */
     protected boolean running = false;
+    /** Random number generator to be used. */
+    protected Random random = new Random();
     
     /**
      * Creates and connects a bot to the server.
@@ -88,6 +91,10 @@ public abstract class BotBase {
                 map[0][i] = -1;
                 map[map.length - 1][i] = -1;
             }
+            
+            Packet.IntPacket ip = (Packet.IntPacket) con.receivePacket();
+            random.setSeed(ip.getIntValue());
+            System.out.println(ip.getIntValue());
             
             cycles = new Cycle[mp.getPlayers()];
             for (int i = 0; i < cycles.length; i++) {
