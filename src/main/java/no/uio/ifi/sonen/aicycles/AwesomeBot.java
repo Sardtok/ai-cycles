@@ -79,24 +79,19 @@ public class AwesomeBot extends BotBase implements Runnable {
      * it will randomly choose a new direction unless it will lead to a crash.
      */
     public void run() {
-        int lastUpdate = updates;
+        int lastUpdate = updates - 1;
         while (cycles[id - 1].isAlive()) {
-            if (updates <= lastUpdate) {
-                synchronized(this) {
+            synchronized (this) {
+                while (updates <= lastUpdate) {
                     try {
-                        // Make sure we got the lock first.
-                        if (updates <= lastUpdate) {
-                            this.wait();
-                        }
-                    } catch (InterruptedException e) { }
-                    
-                    continue;
+                        this.wait();
+                    } catch (InterruptedException e) {
+                    }
                 }
+                lastUpdate = updates;
             }
-            
-            lastUpdate = updates;
 
-            double chance = Math.random();
+            double chance = random.nextDouble();
             Cycle c = cycles[id-1];
             Direction dir = c.getDirection();
             int x = c.getX();
