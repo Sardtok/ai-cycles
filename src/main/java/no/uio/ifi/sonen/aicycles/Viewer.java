@@ -43,6 +43,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 /**
+ * A game viewer for displaying what happens on a server.
  *
  * @author Sigmund Hansen <sigmund@chickensoft.com>
  */
@@ -82,10 +83,19 @@ public class Viewer {
     private DisplayMode mode;
     /** The device that is used to set the graphics mode. */
     private GraphicsDevice device;
+    /** The buffer strategy used for drawing and double-buffering. */
     private BufferStrategy strategy;
     
+    /**
+     * Creates a viewer either in windowed mode, or in fullscreen mode.
+     * 
+     * @param fullscreen Whether to run in fullscreen mode.
+     */
     public Viewer(boolean fullscreen) {
         frame = new JFrame("AI Cycles") {
+            /**
+             * @{inheritDoc}
+             */
             @Override
             public void dispose() {
                 if (mode != null) {
@@ -104,8 +114,8 @@ public class Viewer {
         frame.setLocationRelativeTo(null);
         frame.setResizable(false);
         frame.setUndecorated(true);
-        frame.setVisible(true);
         frame.setBackground(Color.black);
+        frame.setVisible(true);
         
         if (fullscreen) {
          device = GraphicsEnvironment.
@@ -129,8 +139,22 @@ public class Viewer {
 
         frame.createBufferStrategy(2);
         strategy = frame.getBufferStrategy();
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                Graphics g = strategy.getDrawGraphics();
+                g.clearRect(0, 0, WIDTH, HEIGHT);
+                strategy.show();
+            }
+        });
     }
     
+    /**
+     * Clears the window.
+     * 
+     * @param width The width of the game grid.
+     * @param height The height of the game grid.
+     * @param players The players that are participating.
+     */
     public void reset(final int width, final int height, Player[] players) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -142,11 +166,21 @@ public class Viewer {
         });
     }
     
+    /**
+     * Fills a square in the image buffer.
+     * 
+     * @param x The horizontal position of the square.
+     * @param y The vertical position of the square.
+     * @param player The ID of the player to draw here.
+     */
     public void draw(int x, int y, int player) {
         buffer.setColor(colors[player - 1 % colors.length]);
         buffer.fillRect(x * squareSize, y * squareSize, squareSize, squareSize);
     }
     
+    /**
+     * Draws the window.
+     */
     public void draw() {
         SwingUtilities.invokeLater(new Runnable() {
            public void run() {
@@ -157,6 +191,9 @@ public class Viewer {
         });
     }
     
+    /**
+     * Closes the window.
+     */
     public void close() {
         SwingUtilities.invokeLater(new Runnable() {
 
