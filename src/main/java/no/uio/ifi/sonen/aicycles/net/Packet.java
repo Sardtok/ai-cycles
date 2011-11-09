@@ -48,6 +48,8 @@ public abstract class Packet {
     public static final int MAP_PKT = 102;
     /** Position packet. */
     public static final int POS_PKT = 103;
+    /** Random seed packet. */
+    public static final int RND_PKT = 104;
     /** Disconnect packet. */
     public static final int BYE_PKT = 199;
     
