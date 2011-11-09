@@ -90,6 +90,10 @@ public class AwesomeBot extends BotBase implements Runnable {
                 }
                 lastUpdate = updates;
             }
+            
+            if (!cycles[id - 1].isAlive()) {
+                break;
+            }
 
             double chance = random.nextDouble();
             Cycle c = cycles[id-1];
