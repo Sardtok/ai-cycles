@@ -127,8 +127,9 @@ public class Viewer {
                     mode = device.getDisplayMode();
                     DisplayMode[] modes = device.getDisplayModes();
                     for (DisplayMode m : modes) {
-                        if (m.getWidth() == WIDTH
-                            && m.getHeight() == HEIGHT) {
+                        int depth = m.getBitDepth();
+                        if (m.getWidth() == WIDTH && m.getHeight() == HEIGHT
+                            && (depth >= 24 || depth == DisplayMode.BIT_DEPTH_MULTI)) {
                             device.setDisplayMode(m);
                             break;
                         }
