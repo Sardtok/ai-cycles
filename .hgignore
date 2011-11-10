@@ -3,3 +3,10 @@
 \.chg\..*$
 \.rej$
 \.conflict\~$
+target$
+
+syntax: glob
+*.pyc
+*.pyo
+*.class
+*~
