@@ -135,7 +135,7 @@ for packet in packets:
     elif packet.pkt_type == POS_PKT:
         cycles[packet.player - 1].x = packet.x + 1
         cycles[packet.player - 1].y = packet.y + 1
-        grid[packet.x][packet.y] = packet.player
+        grid[packet.x + 1][packet.y + 1] = packet.player
 
     elif packet.pkt_type == RND_PKT:
         random.seed(packet.int_value)
