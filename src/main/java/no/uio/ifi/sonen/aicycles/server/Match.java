@@ -91,6 +91,7 @@ public class Match implements Runnable {
      */
     public void run() {
         connectPlayers();
+        sendUpdate();
         viewer.reset(map.length, map[0].length, players);
 
         // A thread handling packets that should be broadcast to every user.
@@ -153,6 +154,7 @@ public class Match implements Runnable {
         try {
             Thread.sleep(TIMESTEP);
         } catch (InterruptedException e) { }
+        
         simulate();
 
         broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
