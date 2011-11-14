@@ -55,7 +55,8 @@ class Connection:
                 pkt_type = int(match.group('type'))
                 data = match.group('data')
                 self.old = self.old[4 + len(data):]
-                
+                while self.old != '' and (self.old[0] == '\r' or self.old[0] == '\n'):
+                    self.old = self.old[1:]
 
                 if (pkt_type == PID_PKT
                     or pkt_type == RND_PKT
@@ -121,7 +122,7 @@ for packet in packets:
         cycle = 0
         width = packet.width
         height = packet.height
-        grid = [[0] * width] * height
+        grid = [[0 for a in xrange(width)] for b in xrange(height)]
         grid.insert(0, [-1] * width)
         grid.append([-1] * width)
         for row in grid:
@@ -133,9 +134,9 @@ for packet in packets:
             cycle = cycle + 1
 
     elif packet.pkt_type == POS_PKT:
-        cycles[packet.player - 1].x = packet.x + 1
-        cycles[packet.player - 1].y = packet.y + 1
-        grid[packet.x + 1][packet.y + 1] = packet.player
+        cycles[packet.player - 1].x = packet.x
+        cycles[packet.player - 1].y = packet.y
+        grid[packet.x][packet.y] = packet.player
 
     elif packet.pkt_type == RND_PKT:
         random.seed(packet.int_value)
@@ -148,6 +149,7 @@ while cycles[myid - 1].alive:
     direction = cycles[myid - 1].direction
     x = cycles[myid - 1].x
     y = cycles[myid - 1].y
+
     if direction == 'N':
         forward = grid[x][y - 1] == 0
         left = grid[x - 1][y] == 0;

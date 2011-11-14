@@ -43,7 +43,7 @@ public class Server {
     public static void main(String[] args) {
         System.out.println("Hello, bots!");
         Viewer v = new Viewer(false);
-        Match m = new Match(90, 90, (int) (Math.random() * Integer.MAX_VALUE),
+        Match m = new Match(10, 10, (int) (Math.random() * Integer.MAX_VALUE),
                             new String[]{"joe", "joe"}, v);
         m.run();
         //v.close();
