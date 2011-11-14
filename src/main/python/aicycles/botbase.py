@@ -134,9 +134,9 @@ for packet in packets:
             cycle = cycle + 1
 
     elif packet.pkt_type == POS_PKT:
-        cycles[packet.player - 1].x = packet.x
-        cycles[packet.player - 1].y = packet.y
-        grid[packet.x][packet.y] = packet.player
+        cycles[packet.player - 1].x = packet.x + 1
+        cycles[packet.player - 1].y = packet.y + 1
+        grid[packet.x + 1][packet.y + 1] = packet.player
 
     elif packet.pkt_type == RND_PKT:
         random.seed(packet.int_value)
@@ -145,37 +145,54 @@ for packet in packets:
 # This is where the thinking happens. #
 #######################################
 while cycles[myid - 1].alive:
-    choice = random.random()
-    direction = cycles[myid - 1].direction
+    dirs = (
+        (0, -1, "N"),
+        (0, 1, "S"),
+        (1, 0, "E"),
+        (-1, 0, "W"),
+     )
     x = cycles[myid - 1].x
     y = cycles[myid - 1].y
 
-    if direction == 'N':
-        forward = grid[x][y - 1] == 0
-        left = grid[x - 1][y] == 0;
-        right = grid[x + 1][y] == 0;
-    elif direction == 'S':
-        forward = grid[x][y + 1] == 0
-        left = grid[x + 1][y] == 0;
-        right = grid[x - 1][y] == 0;
-    elif direction == 'E':
-        forward = grid[x + 1][y] == 0
-        left = grid[x][y - 1] == 0;
-        right = grid[x][y + 1] == 0;
-    elif direction == 'W':
-        forward = grid[x - 1][y] == 0
-        left = grid[x][y + 1] == 0;
-        right = grid[x][y - 1] == 0;
+    print x, y, grid[x][y-1]
 
-    if choice < 0.3 and left:
-        turn_left()
-    elif choice > 0.7 and right:
-        turn_right()
-    elif not forward:
-        if right:
-            turn_right()
-        else:
-            turn_left()
+    for d in dirs:
+        if grid[x + d[0]][y + d[1]] == 0:
+            break
+    connection.send(Packet(DIR_PKT, d[2]))
+
+
+#    choice = random.random()
+#    direction = cycles[myid - 1].direction
+#    x = cycles[myid - 1].x
+#    y = cycles[myid - 1].y
+
+#    if direction == 'N':
+#        forward = grid[x][y - 1] == 0
+#        left = grid[x - 1][y] == 0;
+#        right = grid[x + 1][y] == 0;
+#    elif direction == 'S':
+#        forward = grid[x][y + 1] == 0
+#        left = grid[x + 1][y] == 0;
+#        right = grid[x - 1][y] == 0;
+#    elif direction == 'E':
+#        forward = grid[x + 1][y] == 0
+#        left = grid[x][y - 1] == 0;
+#        right = grid[x][y + 1] == 0;
+#    elif direction == 'W':
+#        forward = grid[x - 1][y] == 0
+#        left = grid[x][y + 1] == 0;
+#        right = grid[x][y - 1] == 0;
+
+#   if choice < 0.3 and left:
+#        turn_left()
+#    elif choice > 0.7 and right:
+#        turn_right()
+#    elif not forward:
+#        if right:
+#            turn_right()
+#        else:
+#            turn_left()
 
 #######################################
 # Handle updates from the server.     #
