@@ -3,6 +3,8 @@ import socket
 import select
 import re
 import random
+import threading
+import numpy as np
 from packets import *
 from gamegrid import *
 
@@ -34,14 +36,19 @@ class Connection:
                     raise RuntimeException('Master Control Program refuses to communicate')
         except socket.error as (errno, errmsg):
             print 'Master Control Program refuses to communicate'
-            print errmsg
+            print errmsg, errno
             sys.exit(2)
 
     def receive(self):
         packets = []
         done = 0
         while done == 0:
-            buff = self.sock.recv(1024)
+            try:
+                buff = self.sock.recv(1024)
+            except socket.error as (errno, errmsg):
+                print "Socket error!"
+                print errmsg, errno
+                sys.exit(2)
             if buff == '':
                 print 'Master Control Program is silent!'
                 return packets
@@ -55,8 +62,8 @@ class Connection:
                 pkt_type = int(match.group('type'))
                 data = match.group('data')
                 self.old = self.old[4 + len(data):]
-                while self.old != '' and (self.old[0] == '\r' or self.old[0] == '\n'):
-                    self.old = self.old[1:]
+                
+                self.old = self.old.lstrip()
 
                 if (pkt_type == PID_PKT
                     or pkt_type == RND_PKT
@@ -82,131 +89,171 @@ class Connection:
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
 
-connection = Connection()
+class BotBase(threading.Thread):
+    def __init__(self, name="joe", bye_msg="So long, suckers!", host="localhost"):
+        threading.Thread.__init__(self)
+        self.connection = Connection()
+        self.name = name
+        self.connection.host = host
+        self.running = False
 
-def turn_left():
-    index = directions.index(cycles[myid - 1].direction)
-    index = (index + 3) % 4
-    connection.send(Packet(DIR_PKT, directions[index]))
+        self.cycle_count = 0
+        self.myid = 0
 
-def turn_right():
-    index = directions.index(cycles[myid - 1].direction)
-    index = (index + 1) % 4
-    connection.send(Packet(DIR_PKT, directions[index]))
+        self.cycles = []
+        self.grid = []
+        self.bye_msg = bye_msg
 
-def move_cycle(player, direction):
-    cycle = cycles[player - 1]
-    cycle.direction = direction
-    if direction == 'N':
-        cycle.y = cycle.y - 1
-    elif direction == 'S':
-        cycle.y = cycle.y + 1
-    elif direction == 'E':
-        cycle.x = cycle.x + 1
-    elif direction == 'W':
-        cycle.x = cycle.x - 1
-    grid[cycle.x][cycle.y] = player
+    def north(self):
+        self.connection.send(Packet(DIR_PKT, "N"))
+    def south(self):
+        self.connection.send(Packet(DIR_PKT, "S"))
+    def west(self):
+        self.connection.send(Packet(DIR_PKT, "W"))
+    def east(self):
+        self.connection.send(Packet(DIR_PKT, "E"))
+    def move(self, d):
+        self.connection.send(Packet(DIR_PKT, d))
 
-if (len(sys.argv) > 1):
-    connection.host = sys.argv[1]
+    def turn_left(self):
+        index = directions.index(self.cycles[self.myid - 1].direction)
+        index = (index + 3) % 4
+        self.connection.send(Packet(DIR_PKT, directions[index]))
 
-connection.connect(name='joe')
-packets = connection.receive()
+    def turn_right(self):
+        index = directions.index(self.cycles[self.myid - 1].direction)
+        index = (index + 1) % 4
+        self.connection.send(Packet(DIR_PKT, directions[index]))
 
-for packet in packets:
-    if packet.pkt_type == PID_PKT:
-        myid = packet.int_value
+    def move_cycle(self, player, direction):
+        cycle = self.cycles[player - 1]
+        cycle.direction = direction
+        if direction == 'N':
+            cycle.y = cycle.y - 1
+        elif direction == 'S':
+            cycle.y = cycle.y + 1
+        elif direction == 'E':
+            cycle.x = cycle.x + 1
+        elif direction == 'W':
+            cycle.x = cycle.x - 1
+        self.grid[cycle.x][cycle.y] = player
 
-    elif packet.pkt_type == MAP_PKT:
-        cycle_count = packet.players
-        cycle = 0
-        width = packet.width
-        height = packet.height
-        grid = [[0 for a in xrange(width)] for b in xrange(height)]
-        grid.insert(0, [-1] * width)
-        grid.append([-1] * width)
-        for row in grid:
-            row.insert(0, -1)
-            row.append(-1)
+    def run(self):
+        """
+        Every implementation of run should look like this:
 
-        while cycle < cycle_count:
-            cycles.append(Cycle())
-            cycle = cycle + 1
+        self.start_listen()
+        while self.cycles[self.myid - 1].alive:
+            # Think
+            ...
+            self.update()
+        self.end()
+        """
+        raise NotImplementedError
 
-    elif packet.pkt_type == POS_PKT:
-        cycles[packet.player - 1].x = packet.x + 1
-        cycles[packet.player - 1].y = packet.y + 1
-        grid[packet.x + 1][packet.y + 1] = packet.player
+    def start_listen(self):
+        self.connection.connect(name=self.name)
+        packets = self.connection.receive()
 
-    elif packet.pkt_type == RND_PKT:
-        random.seed(packet.int_value)
+        for packet in packets:
+            if packet.pkt_type == PID_PKT:
+                self.myid = packet.int_value
 
-#######################################
-# This is where the thinking happens. #
-#######################################
-while cycles[myid - 1].alive:
-    dirs = (
-        (0, -1, "N"),
-        (0, 1, "S"),
-        (1, 0, "E"),
-        (-1, 0, "W"),
-     )
-    x = cycles[myid - 1].x
-    y = cycles[myid - 1].y
+            elif packet.pkt_type == MAP_PKT:
+                self.cycle_count = packet.players
+                cycle = 0
+                self.width = packet.width
+                self.height = packet.height
+                #print "Map =", width, height
+                self.grid = np.zeros((self.width + 2, self.height + 2))
+                
+                # Make a border
+                self.grid[:,0] = -1
+                self.grid[:,self.width+1] = -1
+                self.grid[self.height+1,:] = -1
+                self.grid[0,:] = -1
+                
+                #print dump_grid(self.grid)
 
-    print x, y, grid[x][y-1]
+                while cycle < self.cycle_count:
+                    self.cycles.append(Cycle())
+                    cycle = cycle + 1
 
-    for d in dirs:
-        if grid[x + d[0]][y + d[1]] == 0:
-            break
-    connection.send(Packet(DIR_PKT, d[2]))
+            elif packet.pkt_type == POS_PKT:
+                self.cycles[packet.player - 1].x = packet.x + 1
+                self.cycles[packet.player - 1].y = packet.y + 1
+                self.grid[packet.x + 1][packet.y + 1] = packet.player
 
+            elif packet.pkt_type == RND_PKT:
+                random.seed(packet.int_value)
+            else:
+                print "We are in trouble:", packet
+                
+    def update(self):
+        """
+        Handle updates from the server.
+        receive will block until there's an update packet.
+        """
+        packets = self.connection.receive()
+        for packet in packets:
+            #print packet
+            if packet.pkt_type == MOV_PKT:
+                self.move_cycle(packet.player, packet.direction)
+            elif packet.pkt_type == DIE_PKT:
+                self.cycles[packet.int_value - 1].alive = False
+            elif packet.pkt_type == BYE_PKT:
+                self.cycles[self.myid - 1].alive = False
 
-#    choice = random.random()
-#    direction = cycles[myid - 1].direction
-#    x = cycles[myid - 1].x
-#    y = cycles[myid - 1].y
+    def end(self):
+        try:
+            self.connection.send(Packet(BYE_PKT, self.bye_msg))
+            self.connection.close()
+        except Exception, e:
+            print "Err", e, dir(e), e.errno, e.__class__
 
-#    if direction == 'N':
-#        forward = grid[x][y - 1] == 0
-#        left = grid[x - 1][y] == 0;
-#        right = grid[x + 1][y] == 0;
-#    elif direction == 'S':
-#        forward = grid[x][y + 1] == 0
-#        left = grid[x + 1][y] == 0;
-#        right = grid[x - 1][y] == 0;
-#    elif direction == 'E':
-#        forward = grid[x + 1][y] == 0
-#        left = grid[x][y - 1] == 0;
-#        right = grid[x][y + 1] == 0;
-#    elif direction == 'W':
-#        forward = grid[x - 1][y] == 0
-#        left = grid[x][y + 1] == 0;
-#        right = grid[x][y - 1] == 0;
+class AwesomeBot(BotBase):
+    def run(self):
+        self.start_listen()
+        while self.cycles[self.myid - 1].alive:
+            choice = random.random()
+            direction = self.cycles[self.myid - 1].direction
+            x = self.cycles[self.myid - 1].x
+            y = self.cycles[self.myid - 1].y
+            if direction == 'N':
+                forward = self.grid[x][y - 1] == 0
+                left = self.grid[x - 1][y] == 0;
+                right = self.grid[x + 1][y] == 0;
+            elif direction == 'S':
+                forward = self.grid[x][y + 1] == 0
+                left = self.grid[x + 1][y] == 0;
+                right = self.grid[x - 1][y] == 0;
+            elif direction == 'E':
+                forward = self.grid[x + 1][y] == 0
+                left = self.grid[x][y - 1] == 0;
+                right = self.grid[x][y + 1] == 0;
+            elif direction == 'W':
+                forward = self.grid[x - 1][y] == 0
+                left = self.grid[x][y + 1] == 0;
+                right = self.grid[x][y - 1] == 0;
 
-#   if choice < 0.3 and left:
-#        turn_left()
-#    elif choice > 0.7 and right:
-#        turn_right()
-#    elif not forward:
-#        if right:
-#            turn_right()
-#        else:
-#            turn_left()
+            if choice < 0.3 and left:
+                self.turn_left()
+            elif choice > 0.7 and right:
+                self.turn_right()
+            elif not forward:
+                if right:
+                    self.turn_right()
+                else:
+                    self.turn_left()
+            self.update()
 
-#######################################
-# Handle updates from the server.     #
-# receive will block until there's an #
-# update packet.                      #
-####################################### 
-    packets = connection.receive()
-    for packet in packets:
-        if packet.pkt_type == MOV_PKT:
-            move_cycle(packet.player, packet.direction)
-        elif packet.pkt_type == DIE_PKT:
-            cycles[packet.int_value - 1].alive = False
-        elif packet.pkt_type == BYE_PKT:
-            cycles[myid - 1].alive = False
+        self.end()
 
-connection.send(Packet(BYE_PKT, 'So long, suckers!'))
-connection.close()
+def _main():
+    if (len(sys.argv) > 1):
+        b = AwesomeBot(host=sys.argv[1])
+    else:
+        b = AwesomeBot()
+    b.start()
+
+if __name__ == "__main__": _main()
