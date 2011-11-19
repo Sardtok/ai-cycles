@@ -165,7 +165,7 @@ class BotBase(threading.Thread):
                 self.width = packet.width
                 self.height = packet.height
                 #print "Map =", width, height
-                self.grid = np.zeros((self.width + 2, self.height + 2))
+                self.grid = np.zeros((self.width + 2, self.height + 2), int)
                 
                 # Make a border
                 self.grid[:,0] = -1
