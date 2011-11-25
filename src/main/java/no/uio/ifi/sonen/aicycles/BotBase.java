@@ -191,6 +191,10 @@ public abstract class BotBase {
                             con.sendPacket(p);
                             con.close();
                             cycles[id - 1].kill();
+                            synchronized(this) {
+                                updates++;
+                                notify();
+                            }
                             break;
                             
                         case Packet.DIE_PKT:
