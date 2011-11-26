@@ -125,6 +125,20 @@ public abstract class BotBase {
         new Thread(new StateUpdater()).start();
         running = true;
     }
+
+    /**
+     * Sets the direction of the cycle.
+     * 
+     * @param d The direction to move in.
+     */
+    protected final void setDirection(Direction d) {
+        try {
+            con.sendPacket(new Packet.DirectionPacket(d));
+        } catch (Exception e) {
+            System.err.printf("MCP won't listen:%n%s%n",
+                              e.getMessage());
+        }
+    }
     
     /**
      * Turn this bot to the left.
