@@ -73,7 +73,6 @@ public abstract class BotBase {
             con.sendPacket(new Packet.SimplePacket(getName(), Packet.SHK_PKT));
             
             p = con.receivePacket();
-            System.out.println(p);
             if (p.getPacketType() != Packet.PID_PKT) {
                 con.close();
                 System.exit(4);
@@ -94,7 +93,6 @@ public abstract class BotBase {
             
             Packet.IntPacket ip = (Packet.IntPacket) con.receivePacket();
             random.setSeed(ip.getIntValue());
-            System.out.println(ip.getIntValue());
             
             cycles = new Cycle[mp.getPlayers()];
             for (int i = 0; i < cycles.length; i++) {
