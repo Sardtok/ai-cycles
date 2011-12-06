@@ -77,7 +77,11 @@ public class Match implements Runnable {
         broadcastQueue.offer(new Packet.IntPacket(rand, Packet.RND_PKT));
 
         for (int i = 0; i < players.length; i++) {
-            int x = dX * (i % (cols) + 1);
+            int index = i+1;
+            if (index >= cols) {
+                index++;
+            }
+            int x = dX * (index % cols);
             int y = dY * (i / 2 + 1);
             this.players[i] = new Player(i + 1, players[i], x, y);
             map[x][y] = i + 1;
@@ -156,6 +160,13 @@ public class Match implements Runnable {
         } catch (InterruptedException e) { }
         
         simulate();
+        
+        for (Player p : players) {
+            if (p.isAlive()) {
+                p.derez(updates);
+                viewer.setDead(p);
+            }
+        }
 
         broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
         synchronized (broadcastQueue) {
@@ -209,6 +220,12 @@ public class Match implements Runnable {
                 }
             }
         }
+        
+        try {
+            ss.close();
+        } catch (IOException ioe) {
+            System.err.printf("Could not close server socket: %s%n", ioe.getMessage());
+        }
     }
 
     /**
@@ -253,7 +270,8 @@ public class Match implements Runnable {
      */
     private void kill(Player p) {
         boolean wakeup = broadcastQueue.isEmpty();
-        p.derez();
+        p.derez(updates);
+        viewer.setDead(p);
         System.out.printf("%d died%n", p.getId());
         broadcastQueue.offer(new Packet.IntPacket(p.getId(), Packet.DIE_PKT));
 
@@ -337,7 +355,7 @@ public class Match implements Runnable {
 
                 } else {
                     for (Player p2 : players) {
-                        if (p2 == p || !p.isAlive()) {
+                        if (p2.getId() <= p.getId() || !p2.isAlive()) {
                             continue;
                         }
 
