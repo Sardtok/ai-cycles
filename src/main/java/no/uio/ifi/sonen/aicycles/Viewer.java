@@ -40,6 +40,11 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
@@ -83,6 +88,9 @@ public class Viewer {
     private Player[] players;
     /** The players that are ready. */
     private boolean[] ready;
+    /** The scoreboard for the current/previous game. */
+    private Map<Integer, List<Player>> scoreboard
+            = new TreeMap<Integer, List<Player>>();
     
     /** The frame to display stuff in. */
     private JFrame frame;
@@ -169,13 +177,11 @@ public class Viewer {
      * @param p The player that has connected.
      */
     public void setReady(Player p) {
-        for (int i = 0; i < players.length; i++) {
-            if (players[i] == p) {
-                ready[i] = true;
-                break;
-            }
+        if (players[p.getId() - 1] != p) {
+            return;
         }
         
+        ready[p.getId() - 1] = true;
         for (int i = 0; i < ready.length; i++) {
             if (!ready[i]) {
                 draw();
@@ -183,8 +189,27 @@ public class Viewer {
             }
         }
         
+        scoreboard.clear();
         running = true;
         draw();
+    }
+    
+    /**
+     * Adds a player to the list of dead players.
+     * 
+     * @param p The player to add to the list of dead players.
+     */
+    public void setDead(Player p) {
+        if (players[p.getId() - 1] != p) {
+            return;
+        }
+        
+        List<Player> l = scoreboard.get(p.getUpdates());
+        if (l == null) {
+            l = new ArrayList<Player>();
+            scoreboard.put(p.getUpdates(), l);
+        }
+        l.add(p);
     }
     
     /**
@@ -225,11 +250,10 @@ public class Viewer {
     
     /**
      * Draws the list of players the server is waiting for.
-     * It also draws the scoreboard for the last game.
      * 
      * @param g The graphics to draw to.
      */
-    public void drawQueue(Graphics g) {
+    private void drawQueue(Graphics g) {
         FontMetrics fm = g.getFontMetrics(font);
         g.setFont(font);
         g.setColor(Color.WHITE);
@@ -245,8 +269,41 @@ public class Viewer {
                              HEIGHT / 2 + fm.getHeight() * count);
             }
         }
+    }
+    
+    /**
+     * Draws the player list and player placements/scores.
+     * 
+     * @param g The graphics object to draw to.
+     */
+    private void drawScores(Graphics g) {
+        int line = 1;
+        int place = players.length;
+        FontMetrics fm = g.getFontMetrics(font);
+        g.setFont(font);
+        if (running) {
+            g.setColor(Color.WHITE);
+            g.drawString("Players:", 10, fm.getHeight() * line++);
+            for (int i = 0; i < players.length; i++) {
+                if (!players[i].isAlive()) {
+                    continue;
+                }
+                g.setColor(colors[i]);
+                g.drawString(players[i].getName(), 10, fm.getHeight() * line++);
+            }
+        }
         
-        // DRAW SCOREBOARD
+        line += scoreboard.size() + 1;
+        for (List<Player> ps : scoreboard.values()) {
+            int decrease = 0;
+            for (Player p : ps) {
+                g.setColor(colors[p.getId() - 1]);
+                g.drawString(String.format("%d %s", place, p.getName()),
+                             10, fm.getHeight() * line--);
+                decrease++;
+            }
+            place -= decrease;
+        }
     }
     
     /**
@@ -262,6 +319,7 @@ public class Viewer {
                } else {
                    drawQueue(g);
                }
+               drawScores(g);
                strategy.show();
            } 
         });
