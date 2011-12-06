@@ -30,6 +30,8 @@ import no.uio.ifi.sonen.aicycles.server.Player;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.DisplayMode;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
@@ -56,9 +58,9 @@ public class Viewer {
 
     /** Twelve different player colors. */
     private static final Color[] colors = new Color[] {
-        new Color(255, 0, 0),
-        new Color(0, 0, 255),
-        new Color(0, 255, 0),
+        new Color(255, 64, 64),
+        new Color(64, 64, 255),
+        new Color(64, 255, 64),
         new Color(255, 255, 0),
         new Color(0, 255, 255),
         new Color(255, 0, 255),
@@ -69,6 +71,18 @@ public class Viewer {
         new Color(0, 255, 128),
         new Color(255, 0, 128)
     };
+    
+    /** Background color used for everything but the game area. */
+    private static final Color bgColor = new Color(32, 32, 64);
+    /** The font to use for drawing stats. */
+    private Font font = new Font(Font.MONOSPACED, Font.BOLD, 32);
+    
+    /** Whether the game is running or to display the in-between games screen. */
+    private boolean running = false;
+    /** The players in the game. */
+    private Player[] players;
+    /** The players that are ready. */
+    private boolean[] ready;
     
     /** The frame to display stuff in. */
     private JFrame frame;
@@ -107,14 +121,14 @@ public class Viewer {
         
         image = new BufferedImage(HEIGHT, HEIGHT, BufferedImage.TYPE_INT_RGB);
         buffer = image.createGraphics();
-        buffer.setBackground(Color.black);
+        buffer.setBackground(bgColor);
         
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         frame.setMinimumSize(new Dimension(WIDTH, HEIGHT));
         frame.setLocationRelativeTo(null);
         frame.setResizable(false);
         frame.setUndecorated(true);
-        frame.setBackground(Color.black);
+        frame.setBackground(bgColor);
         frame.setVisible(true);
         
         if (fullscreen) {
@@ -150,21 +164,51 @@ public class Viewer {
     }
     
     /**
+     * Announces that a player has connected and removes him from the waiting list.
+     * 
+     * @param p The player that has connected.
+     */
+    public void setReady(Player p) {
+        for (int i = 0; i < players.length; i++) {
+            if (players[i] == p) {
+                ready[i] = true;
+                break;
+            }
+        }
+        
+        for (int i = 0; i < ready.length; i++) {
+            if (!ready[i]) {
+                draw();
+                return;
+            }
+        }
+        
+        running = true;
+        draw();
+    }
+    
+    /**
      * Clears the window.
      * 
      * @param width The width of the game grid.
      * @param height The height of the game grid.
      * @param players The players that are participating.
      */
-    public void reset(final int width, final int height, Player[] players) {
+    public void reset(final int width, final int height, final Player[] players) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 buffer.clearRect(0, 0, image.getWidth(), image.getHeight());
                 int wFactor = image.getWidth() / width;
                 int hFactor = image.getHeight() / height;
                 squareSize = wFactor < hFactor ? wFactor : hFactor;
+                buffer.setColor(Color.BLACK);
+                buffer.fillRect(0, 0, squareSize * width, squareSize * height);
+                running = false;
+                ready = new boolean[players.length];
+                Viewer.this.players = players;
             }
         });
+        draw();
     }
     
     /**
@@ -180,13 +224,44 @@ public class Viewer {
     }
     
     /**
+     * Draws the list of players the server is waiting for.
+     * It also draws the scoreboard for the last game.
+     * 
+     * @param g The graphics to draw to.
+     */
+    public void drawQueue(Graphics g) {
+        FontMetrics fm = g.getFontMetrics(font);
+        g.setFont(font);
+        g.setColor(Color.WHITE);
+        g.drawString("Waiting for:", (WIDTH - fm.stringWidth("Waiting for:"))/2, HEIGHT/2);
+        int count = 0;
+        for (int i = 0; i < players.length; i++) {
+            if (!ready[i]) {
+                count++;
+                String name = players[i].getName();
+                g.setColor(colors[i]);
+                g.drawString(name,
+                             (WIDTH - fm.stringWidth(name)) / 2,
+                             HEIGHT / 2 + fm.getHeight() * count);
+            }
+        }
+        
+        // DRAW SCOREBOARD
+    }
+    
+    /**
      * Draws the window.
      */
     public void draw() {
         SwingUtilities.invokeLater(new Runnable() {
            public void run() {
                Graphics g = strategy.getDrawGraphics();
-               g.drawImage(image, WIDTH-image.getWidth(), 0, null);
+               g.clearRect(0, 0, WIDTH, HEIGHT);
+               if (running) {
+                   g.drawImage(image, WIDTH-image.getWidth(), 0, null);
+               } else {
+                   drawQueue(g);
+               }
                strategy.show();
            } 
         });
