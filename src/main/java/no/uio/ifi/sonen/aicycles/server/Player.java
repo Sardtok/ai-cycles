@@ -30,6 +30,7 @@ import no.uio.ifi.sonen.aicycles.net.Connection;
 import no.uio.ifi.sonen.aicycles.net.MalformedPacketException;
 import no.uio.ifi.sonen.aicycles.net.Packet;
 import java.io.IOException;
+import no.uio.ifi.sonen.aicycles.Cycle;
 import no.uio.ifi.sonen.aicycles.Direction;
 
 /**
@@ -42,15 +43,11 @@ public class Player implements Runnable {
     private int id;
     /** The name of the player. */
     private String name;
+    /** The number of updates this player has performed. */
+    private int updates = 0;
     
-    /** The direction the player is travelling. */
-    private volatile Direction dir = Direction.N;
-    /** The horizontal position of the player. */
-    private int x;
-    /** The vertical position of the player. */
-    private int y;
-    /** Whether the player is alive or not. */
-    private boolean alive = true;
+    /** The player's cycle. */
+    private Cycle cycle;
     
     /** The network connection of the player. */
     private Connection con;
@@ -68,8 +65,7 @@ public class Player implements Runnable {
     public Player(int id, String name, int x, int y) {
         this.id = id;
         this.name = name;
-        this.x = x;
-        this.y = y;
+        this.cycle = new Cycle(x, y);
     }
 
     /**
@@ -112,7 +108,16 @@ public class Player implements Runnable {
      * @return The direction the player is travelling.
      */
     public Direction getDir() {
-        return dir;
+        return cycle.getDirection();
+    }
+    
+    /**
+     * Gets the number of updates performed by this player.
+     * 
+     * @return The number of updates performed by this player.
+     */
+    public int getUpdates() {
+        return updates;
     }
 
     /**
@@ -121,22 +126,8 @@ public class Player implements Runnable {
      * @return The direction the player moved.
      */
     public Direction update() {
-        Direction dir = this.dir;
-        
-        switch (dir) {
-            case N:
-                y--;
-                break;
-            case E:
-                x++;
-                break;
-            case S:
-                y++;
-                break;
-            case W:
-                x--;
-                break;
-        }
+        Direction dir = cycle.getDirection();
+        cycle.update();
         
         return dir;
     }
@@ -144,8 +135,9 @@ public class Player implements Runnable {
     /**
      * De-rezzes (kills) the player.
      */
-    public void derez() {
-        alive = false;
+    public void derez(int updates) {
+        cycle.kill();
+        this.updates = updates;
     }
 
     /**
@@ -186,7 +178,7 @@ public class Player implements Runnable {
                 Packet p = con.receivePacket();
                 if (p instanceof Packet.DirectionPacket) {
                     Packet.DirectionPacket dp = (Packet.DirectionPacket) p;
-                    dir = dp.getDirection();
+                    cycle.setDirection(dp.getDirection());
                 } else if (p.getPacketType() == Packet.BYE_PKT) {
                     System.out.printf("%s disconnected: %s%n",
                                       name, p.getData());
@@ -222,8 +214,8 @@ public class Player implements Runnable {
      * 
      * @return The horizontal position.
      */
-    int getX() {
-        return x;
+    public int getX() {
+        return cycle.getX();
     }
 
     /**
@@ -231,8 +223,8 @@ public class Player implements Runnable {
      * 
      * @return The vertical position.
      */
-    int getY() {
-        return y;
+    public int getY() {
+        return cycle.getY();
     }
 
     /**
@@ -240,7 +232,7 @@ public class Player implements Runnable {
      * 
      * @return true if the player has not been de-rezzed.
      */
-    boolean isAlive() {
-        return alive;
+    public boolean isAlive() {
+        return cycle.isAlive();
     }
 }
