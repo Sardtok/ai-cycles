@@ -41,7 +41,6 @@ import java.awt.Toolkit;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -78,7 +77,7 @@ public class Viewer {
     };
     
     /** Background color used for everything but the game area. */
-    private static final Color bgColor = new Color(32, 32, 64);
+    private static final Color bgColor = new Color(16, 16, 32);
     /** The font to use for drawing stats. */
     private Font font = new Font(Font.MONOSPACED, Font.BOLD, 32);
     
@@ -100,6 +99,8 @@ public class Viewer {
     private BufferedImage image;
     /** The size of a square. */
     private int squareSize;
+    /** The offset to use when drawing cycles. */
+    private int offset;
     
     /** The display mode used prior to going into fullscreen mode. */
     private DisplayMode mode;
@@ -127,7 +128,7 @@ public class Viewer {
             }
         };
         
-        image = new BufferedImage(HEIGHT, HEIGHT, BufferedImage.TYPE_INT_RGB);
+        image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
         buffer = image.createGraphics();
         buffer.setBackground(bgColor);
         
@@ -226,8 +227,10 @@ public class Viewer {
                 int wFactor = image.getWidth() / width;
                 int hFactor = image.getHeight() / height;
                 squareSize = wFactor < hFactor ? wFactor : hFactor;
+                offset = image.getWidth() - squareSize * width;
                 buffer.setColor(Color.BLACK);
-                buffer.fillRect(0, 0, squareSize * width, squareSize * height);
+                buffer.fillRect(offset, 0,
+                                image.getWidth(), squareSize * width);
                 running = false;
                 ready = new boolean[players.length];
                 Viewer.this.players = players;
@@ -245,7 +248,7 @@ public class Viewer {
      */
     public void draw(int x, int y, int player) {
         buffer.setColor(colors[player - 1 % colors.length]);
-        buffer.fillRect(x * squareSize, y * squareSize, squareSize, squareSize);
+        buffer.fillRect(x * squareSize + offset, y * squareSize, squareSize, squareSize);
     }
     
     /**
