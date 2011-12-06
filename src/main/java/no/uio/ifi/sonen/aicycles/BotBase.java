@@ -97,7 +97,7 @@ public abstract class BotBase {
             cycles = new Cycle[mp.getPlayers()];
             for (int i = 0; i < cycles.length; i++) {
                 Packet.PositionPacket pp = (Packet.PositionPacket) con.receivePacket();
-                cycles[pp.getPlayer() - 1] = new Cycle(pp.getX(), pp.getY());
+                cycles[pp.getPlayer() - 1] = new Cycle(pp.getX() + 1, pp.getY() + 1);
                 map[pp.getX() + 1][pp.getY() + 1] = pp.getPlayer();
             }
             
