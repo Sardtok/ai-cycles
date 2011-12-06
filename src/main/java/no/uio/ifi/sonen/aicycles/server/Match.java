@@ -90,9 +90,9 @@ public class Match implements Runnable {
      * starts the broadcast thread and runs the simulation.
      */
     public void run() {
+        viewer.reset(map.length, map[0].length, players);
         connectPlayers();
         sendUpdate();
-        viewer.reset(map.length, map[0].length, players);
 
         // A thread handling packets that should be broadcast to every user.
         new Thread(new Runnable() {
@@ -233,6 +233,7 @@ public class Match implements Runnable {
                 if (p.getName().equals(pkt.getData()) && p.setConnection(con)) {
                     p.sendPacket(new Packet.IntPacket(p.getId(), Packet.PID_PKT));
                     System.out.printf("%s connected.%n", p.getName());
+                    viewer.setReady(p);
                     return true;
                 }
             }
