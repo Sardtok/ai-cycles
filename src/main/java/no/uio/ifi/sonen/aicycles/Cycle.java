@@ -31,40 +31,81 @@ package no.uio.ifi.sonen.aicycles;
  * @author Sigmund Hansen <sigmund@chickensoft.com>
  */
 public class Cycle {
+    /** The horizontal position of the cycle. */
     private int x;
+    /** The vertical position of the cycle. */
     private int y;
+    /** The direction the cycle is travelling. */
     private volatile Direction dir = Direction.N;
+    /** Whether the cycle is alive or not. */
     private boolean alive = true;
     
+    /**
+     * Creates a cycle at the given position.
+     * 
+     * @param x The cycle's X coordinate.
+     * @param y The cycle's Y coordinate.
+     */
     public Cycle(int x, int y) {
         this.x = x;
         this.y = y;
     }
     
+    /**
+     * Gets the cycle's X coordinate.
+     * 
+     * @return The cycle's horizontal position.
+     */
     public int getX() {
-        return x + 1;
+        return x;
     }
     
+    /**
+     * Gets the cycle's Y coordinate.
+     * 
+     * @return The cycle's vertical position.
+     */
     public int getY() {
-        return y + 1;
+        return y;
     }
     
+    /**
+     * Gets the direction the cycle is headed.
+     * 
+     * @return The cycle's heading.
+     */
     public Direction getDirection() {
         return dir;
     }
     
+    /**
+     * Sets the direction the cycle is headed.
+     * 
+     * @param dir The new direction of the cycle.
+     */
     public void setDirection(Direction dir) {
         this.dir = dir;
     }
     
+    /**
+     * Kills the cycle.
+     */
     public void kill() {
         alive = false;
     }
     
+    /**
+     * Checks if the cycle is alive.
+     * 
+     * @return true if the cycle is alive, false otherwise.
+     */
     public boolean isAlive() {
         return alive;
     }
     
+    /**
+     * Moves the cycle in the direction it is headed.
+     */
     public void update() {
         if (!alive) {
             return;
