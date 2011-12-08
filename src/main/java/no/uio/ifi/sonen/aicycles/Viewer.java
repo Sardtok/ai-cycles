@@ -230,7 +230,7 @@ public class Viewer {
                 offset = image.getWidth() - squareSize * width;
                 buffer.setColor(Color.BLACK);
                 buffer.fillRect(offset, 0,
-                                image.getWidth(), squareSize * width);
+                                image.getWidth() - offset, squareSize * height);
                 running = false;
                 ready = new boolean[players.length];
                 Viewer.this.players = players;
@@ -260,6 +260,7 @@ public class Viewer {
         FontMetrics fm = g.getFontMetrics(font);
         g.setFont(font);
         g.setColor(Color.WHITE);
+        g.drawString("Stats for last game:", 10, fm.getHeight());
         g.drawString("Waiting for:", (WIDTH - fm.stringWidth("Waiting for:"))/2, HEIGHT/2);
         int count = 0;
         for (int i = 0; i < players.length; i++) {
@@ -280,13 +281,13 @@ public class Viewer {
      * @param g The graphics object to draw to.
      */
     private void drawScores(Graphics g) {
-        int line = 1;
+        int line = 2;
         int place = players.length;
         FontMetrics fm = g.getFontMetrics(font);
         g.setFont(font);
         if (running) {
             g.setColor(Color.WHITE);
-            g.drawString("Players:", 10, fm.getHeight() * line++);
+            g.drawString("Players:", 10, fm.getHeight());
             for (int i = 0; i < players.length; i++) {
                 if (!players[i].isAlive()) {
                     continue;
@@ -296,7 +297,7 @@ public class Viewer {
             }
         }
         
-        line += scoreboard.size() + 1;
+        line += scoreboard.size();
         for (List<Player> ps : scoreboard.values()) {
             int decrease = 0;
             for (Player p : ps) {
