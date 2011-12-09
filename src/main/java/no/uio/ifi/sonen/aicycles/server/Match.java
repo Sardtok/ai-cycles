@@ -96,16 +96,11 @@ public class Match implements Runnable {
             broadcastQueue.offer(new Packet.PositionPacket(i + 1, x, y));
         }
     }
-
+    
     /**
-     * Connects all players,
-     * starts the broadcast thread and runs the simulation.
+     * Starts a thread that handles message broadcasting.
      */
-    public void run() {
-        viewer.reset(map.length, map[0].length, players);
-        connectPlayers();
-        sendUpdate();
-
+    private void startBroadcast() {
         // A thread handling packets that should be broadcast to every user.
         new Thread(new Runnable() {
 
@@ -157,7 +152,18 @@ public class Match implements Runnable {
                 }
             }
         }).start();
+    }
 
+    /**
+     * Connects all players,
+     * starts the broadcast thread and runs the simulation.
+     */
+    public void run() {
+        viewer.reset(map.length, map[0].length, players);
+        connectPlayers();
+        sendUpdate();
+        startBroadcast();
+        
         for (Player p : players) {
             viewer.draw(p.getX(), p.getY(), p.getId());
             new Thread(p).start();
@@ -169,6 +175,22 @@ public class Match implements Runnable {
         
         simulate();
         
+
+        broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
+        synchronized (broadcastQueue) {
+            broadcastQueue.notify();
+        }
+        finished = true;
+    }
+    
+    /**
+     * Sets the length and points of all players.
+     * It also marks the last surviving player as dead (sets its final length).
+     */
+    private void setPlayerStatistics() {
+        Player previous = null;
+        int points = 0;
+        
         for (Player p : players) {
             if (p.isAlive()) {
                 p.derez(updates);
@@ -177,8 +199,6 @@ public class Match implements Runnable {
             }
         }
         
-        Player previous = null;
-        int points = 0;
         while (!deadPlayers.isEmpty()) {
             Player p = deadPlayers.poll();
             if (previous == null || p.getUpdates() != previous.getUpdates()) {
@@ -187,12 +207,6 @@ public class Match implements Runnable {
             stats.setLength(p.getName(), p.getUpdates());
             stats.setPoints(p.getName(), points);
         }
-
-        broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
-        synchronized (broadcastQueue) {
-            broadcastQueue.notify();
-        }
-        finished = true;
     }
 
     /**
