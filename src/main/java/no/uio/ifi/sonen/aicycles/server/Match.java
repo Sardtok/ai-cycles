@@ -174,7 +174,8 @@ public class Match implements Runnable {
         } catch (InterruptedException e) { }
         
         simulate();
-        
+
+        setPlayerStatistics();
 
         broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
         synchronized (broadcastQueue) {
