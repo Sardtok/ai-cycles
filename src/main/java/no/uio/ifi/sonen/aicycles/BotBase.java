@@ -203,9 +203,9 @@ public abstract class BotBase {
                             con.sendPacket(p);
                             con.close();
                             cycles[id - 1].kill();
-                            synchronized(this) {
+                            synchronized(BotBase.this) {
                                 updates++;
-                                notify();
+                                BotBase.this.notify();
                             }
                             break;
                             
@@ -226,9 +226,21 @@ public abstract class BotBase {
                     System.err.printf("Connection issues:%n%s%n",
                                       ioe.getMessage());
                     con.close();
+                    cycles[id - 1].kill();
+                    synchronized (BotBase.this) {
+                        updates++;
+                        BotBase.this.notify();
+                    }
+
                 } catch (MalformedPacketException mpe) {
                     System.err.printf("Master Control Program is talking gibberish:%n%s%n",
                                       mpe.getMessage());
+                    con.close();
+                    cycles[id - 1].kill();
+                    synchronized (BotBase.this) {
+                        updates++;
+                        BotBase.this.notify();
+                    }
                 }
             }
         }
