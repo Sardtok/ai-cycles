@@ -31,6 +31,8 @@ import no.uio.ifi.sonen.aicycles.net.MalformedPacketException;
 import no.uio.ifi.sonen.aicycles.net.Packet;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import no.uio.ifi.sonen.aicycles.Direction;
 import no.uio.ifi.sonen.aicycles.Viewer;
@@ -51,12 +53,16 @@ public class Match implements Runnable {
     /** The number of updates that have gone by. */
     private int updates = 0;
     /** The number of milliseconds between updates. */
-    private static final long TIMESTEP = 200;
+    private static final long TIMESTEP = 50;
     /** A queue of packets to send to clients. */
     private final ConcurrentLinkedQueue<Packet> broadcastQueue =
             new ConcurrentLinkedQueue<Packet>();
     /** The graphical display of the game state. */
     private Viewer viewer;
+    /** Statistics for this match. */
+    private Statistics stats;
+    /** List of dead players, used to handle scores for statistics. */
+    private Queue<Player> deadPlayers = new LinkedList<Player>();
 
     /**
      * Creates a match with a map of the given size and the given players.
@@ -72,6 +78,7 @@ public class Match implements Runnable {
         int dY = height / (players.length < 3 ? 2 : 3);
         this.players = new Player[players.length];
         this.viewer = viewer;
+        this.stats = new Statistics(width, height, rand, players.length);
 
         broadcastQueue.offer(new Packet.MapPacket(width, height, players.length));
         broadcastQueue.offer(new Packet.IntPacket(rand, Packet.RND_PKT));
@@ -84,6 +91,7 @@ public class Match implements Runnable {
             int x = dX * (index % cols);
             int y = dY * (i / 2 + 1);
             this.players[i] = new Player(i + 1, players[i], x, y);
+            this.stats.addTeam(this.players[i]);
             map[x][y] = i + 1;
             broadcastQueue.offer(new Packet.PositionPacket(i + 1, x, y));
         }
@@ -156,7 +164,7 @@ public class Match implements Runnable {
         }
 
         try {
-            Thread.sleep(TIMESTEP);
+            Thread.sleep(1000);
         } catch (InterruptedException e) { }
         
         simulate();
@@ -165,7 +173,19 @@ public class Match implements Runnable {
             if (p.isAlive()) {
                 p.derez(updates);
                 viewer.setDead(p);
+                deadPlayers.offer(p);
             }
+        }
+        
+        Player previous = null;
+        int points = 0;
+        while (!deadPlayers.isEmpty()) {
+            Player p = deadPlayers.poll();
+            if (previous == null || p.getUpdates() != previous.getUpdates()) {
+                points = players.length - deadPlayers.size() - 1;
+            }
+            stats.setLength(p.getName(), p.getUpdates());
+            stats.setPoints(p.getName(), points);
         }
 
         broadcastQueue.offer(new Packet.SimplePacket("End of line!", Packet.BYE_PKT));
@@ -272,6 +292,7 @@ public class Match implements Runnable {
         boolean wakeup = broadcastQueue.isEmpty();
         p.derez(updates);
         viewer.setDead(p);
+        deadPlayers.offer(p);
         System.out.printf("%d died%n", p.getId());
         broadcastQueue.offer(new Packet.IntPacket(p.getId(), Packet.DIE_PKT));
 
@@ -374,5 +395,14 @@ public class Match implements Runnable {
             lastUpdate += TIMESTEP;
             viewer.draw();
         }
+    }
+    
+    /**
+     * Gets the stats for this match.
+     * 
+     * @return An object with statistics for this match.
+     */
+    public Statistics getStatistics() {
+        return stats;
     }
 }
