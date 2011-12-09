@@ -88,8 +88,7 @@ public class Viewer {
     /** The players that are ready. */
     private boolean[] ready;
     /** The scoreboard for the current/previous game. */
-    private Map<Integer, List<Player>> scoreboard
-            = new TreeMap<Integer, List<Player>>();
+    private List<Player> scoreboard = new ArrayList<Player>();
     
     /** The frame to display stuff in. */
     private JFrame frame;
@@ -205,12 +204,7 @@ public class Viewer {
             return;
         }
         
-        List<Player> l = scoreboard.get(p.getUpdates());
-        if (l == null) {
-            l = new ArrayList<Player>();
-            scoreboard.put(p.getUpdates(), l);
-        }
-        l.add(p);
+        scoreboard.add(p);
     }
     
     /**
@@ -282,7 +276,6 @@ public class Viewer {
      */
     private void drawScores(Graphics g) {
         int line = 2;
-        int place = players.length;
         FontMetrics fm = g.getFontMetrics(font);
         g.setFont(font);
         if (running) {
@@ -297,16 +290,20 @@ public class Viewer {
             }
         }
         
-        line += scoreboard.size();
-        for (List<Player> ps : scoreboard.values()) {
-            int decrease = 0;
-            for (Player p : ps) {
-                g.setColor(colors[p.getId() - 1]);
-                g.drawString(String.format("%d %s", place, p.getName()),
-                             10, fm.getHeight() * line--);
-                decrease++;
+        line += scoreboard.size() - 1;
+        int place = players.length;
+        int decrease = 0;
+        Player prev = null;
+        for (Player p : scoreboard) {
+            if (prev != null && prev.getUpdates() != p.getUpdates()) {
+                place -= decrease;
+                decrease = 0;
             }
-            place -= decrease;
+            g.setColor(colors[p.getId() - 1]);
+            g.drawString(String.format("%d %s", place, p.getName()),
+                         10, fm.getHeight() * line--);
+            decrease++;
+            prev = p;
         }
     }
     
