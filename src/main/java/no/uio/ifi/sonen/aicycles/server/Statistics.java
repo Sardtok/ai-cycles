@@ -244,8 +244,8 @@ public class Statistics {
             append(sb, t.name);
             append(sb, t.startX);
             append(sb, t.startY);
-            append(sb, t.length);
             append(sb, t.points);
+            append(sb, t.length);
         }
         
         return sb.toString();
