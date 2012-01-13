@@ -73,9 +73,9 @@ public class Match implements Runnable {
      */
     public Match(int width, int height, int rand, String[] players, Viewer viewer) {
         map = new int[width][height];
-        int cols = Math.max(players.length / 2 + 1, 3);
-        int dX = width / cols;
-        int dY = height / (players.length < 3 ? 2 : 3);
+        int pW = width / 2 - 1;
+        int pH = height / 2 - 1;
+        double step = (Math.PI * 2) / players.length;
         this.players = new Player[players.length];
         this.viewer = viewer;
         this.stats = new Statistics(width, height, rand, players.length);
@@ -84,12 +84,8 @@ public class Match implements Runnable {
         broadcastQueue.offer(new Packet.IntPacket(rand, Packet.RND_PKT));
 
         for (int i = 0; i < players.length; i++) {
-            int index = i+1;
-            if (index >= cols) {
-                index++;
-            }
-            int x = dX * (index % cols);
-            int y = dY * (i / 2 + 1);
+            int x = (int)(-Math.cos(step * i) * pW) + pW + 1; // P1 starts on the left 
+            int y = (int)(Math.sin(step * i) * pH) + pH + 1; // The first players start on the top half
             this.players[i] = new Player(i + 1, players[i], x, y);
             this.stats.addTeam(this.players[i]);
             map[x][y] = i + 1;
