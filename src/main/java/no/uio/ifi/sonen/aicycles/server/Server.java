@@ -133,11 +133,8 @@ public class Server implements Runnable {
         if (args.length < 2) {
             System.out.println("Hello, bots!");
             Viewer v = new Viewer(false);
-            Match m = new Match(50, 90, (int) (Math.random() * Integer.MAX_VALUE),
+            Match m = new Match(47, 47, (int) (Math.random() * Integer.MAX_VALUE),
                                 new String[]{"joe", "sigmunha"}, v);
-            m.run();
-            m = new Match(50, 90, (int) (Math.random() * Integer.MAX_VALUE),
-                          new String[]{"joe", "sigmunha"}, v);
             m.run();
         } else {
             Server s = new Server(args[0], args[1]);
@@ -162,6 +159,12 @@ public class Server implements Runnable {
             totalStats.add(s);
             writeStats(s);
             advance();
+        }
+        
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            
         }
         
         v.close();
